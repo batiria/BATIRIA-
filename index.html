@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1B1A17">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Batiria">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Batiria</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{
+  color-scheme:light;
+  --ground:#F3F1EC; --surface:#FFFFFF; --sunk:#EAE7E0; --ink:#1B1A17; --muted:#5F5B53; --line:#DDD8CE;
+  --accent:#B93F0E; --accent-ink:#FFFFFF; --accent-soft:#F6E3D8; --accent-text:#8A2F0A;
+  --ok:#24552E; --ok-soft:#E1EDE3; --warn-soft:#FFF4DC; --warn:#7A5300;
+  --display:'Archivo',system-ui,sans-serif; --body:'IBM Plex Sans',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    color-scheme:dark;
+    --ground:#161513; --surface:#211F1C; --sunk:#2A2824; --ink:#F1EEE8; --muted:#A8A298; --line:#3A3732;
+    --accent:#E0612C; --accent-ink:#1B1A17; --accent-soft:#3D2519; --accent-text:#F2A37F;
+    --ok:#8FCB9A; --ok-soft:#1F3324; --warn-soft:#3A2E12; --warn:#F1CD7A;
+  }
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--ground)}
+body{font-family:var(--body);color:var(--ink);font-size:15px;line-height:1.5;padding-top:env(safe-area-inset-top,0px)}
+img{max-width:100%}
+.wrap{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:0 calc(80px + env(safe-area-inset-bottom,0px))}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:18px 12px}
+.brand{font-family:var(--display);font-weight:800;font-size:24px;letter-spacing:-.5px}
+.brand span{color:var(--accent)}
+.company{font-size:13px;color:var(--muted);text-align:right}
+nav.tabs{display:flex;gap:4px;background:var(--sunk);padding:4px;border-radius:14px}
+nav.tabs button{flex:1;min-height:44px;border:0;border-radius:10px;background:transparent;color:var(--muted);font:600 14px var(--body);cursor:pointer}
+nav.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+section.view{display:flex;flex-direction:column;gap:16px;padding-top:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px 16px;display:flex;flex-direction:column;gap:14px}
+.panel h2{margin:0;font-family:var(--display);font-weight:700;font-size:18px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:520px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:600;color:var(--muted)}
+input[type=text],input[type=url],input[type=password],select,textarea{font:400 16px var(--body);color:var(--ink);background:var(--ground);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px;width:100%}
+textarea{resize:vertical}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hint{font-size:13px;color:var(--muted)}
+.btn{min-height:48px;border-radius:14px;border:1px solid var(--ink);background:var(--surface);color:var(--ink);font:600 15px var(--body);padding:0 18px;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.dark{background:var(--ink);border-color:var(--ink);color:var(--ground)}
+.btn.ghost{border-color:var(--line);background:transparent}
+.btn.small{min-height:40px;font-size:14px;padding:0 12px;border-radius:10px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+.btns .btn{flex:1 1 150px}
+.pill{display:inline-flex;align-items:center;font-size:12px;font-weight:600;padding:3px 10px;border-radius:99px;background:var(--sunk);color:var(--muted)}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+/* recorder */
+.rec{display:flex;flex-direction:column;align-items:center;gap:12px;padding:12px 0 4px}
+.recbtn{width:112px;height:112px;border-radius:56px;border:0;background:var(--ink);color:var(--ground);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:box-shadow .2s,background .2s}
+.recbtn.on{background:var(--accent);color:#fff;box-shadow:0 0 0 12px var(--accent-soft)}
+.timer{font-family:var(--mono);font-size:28px;letter-spacing:1px}
+.recstate{font-weight:600;text-align:center}
+.bars{display:flex;align-items:flex-end;gap:3px;height:28px}
+.bars i{display:block;width:4px;border-radius:2px;background:var(--accent);height:6px;transition:height .08s}
+audio{width:100%}
+.photos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:480px){.photos{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ph{display:flex;flex-direction:column;gap:6px}
+.ph .img{position:relative;aspect-ratio:4/3;max-width:100%;border-radius:10px;overflow:hidden;background:var(--sunk)}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph .rm{position:absolute;top:6px;right:6px;width:32px;height:32px;border-radius:16px;border:0;background:rgba(27,26,23,.75);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.ph input{font-size:14px;min-height:38px;padding:6px 8px}
+.add-photo{position:relative;aspect-ratio:4/3;max-width:100%;border:2px dashed var(--line);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer}
+.add-photo input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.status{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted)}
+.spin{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--accent);animation:sp .9s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+.alert{border-radius:12px;padding:12px 14px;font-size:14px;background:var(--warn-soft);color:var(--warn)}
+.alert ul{margin:4px 0 0;padding-left:18px}
+.err{background:var(--accent-soft);color:var(--accent-text)}
+details summary{cursor:pointer;font-weight:600;font-size:14px;min-height:36px;display:flex;align-items:center}
+/* sheet */
+.sheet{background:#fff;color:#1B1A17;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.12),0 8px 28px rgba(0,0,0,.08);padding:26px 20px;display:flex;flex-direction:column;gap:18px;font-size:14px}
+.sheet .hd{display:flex;justify-content:space-between;gap:16px;border-bottom:3px solid #1B1A17;padding-bottom:14px;flex-wrap:wrap}
+.sheet .co{font-family:var(--display);font-weight:800;font-size:15px}
+.sheet .hd img{max-height:44px;max-width:160px;display:block}
+.sheet h3{margin:4px 0 0;font-family:var(--display);font-weight:800;font-size:22px}
+.sheet .meta{font-size:12px;color:#5F5B53;text-align:right;display:flex;flex-direction:column;gap:2px}
+.sheet .meta b{color:#1B1A17;font-family:var(--mono);font-weight:500}
+.infos{margin:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 18px;background:#F3F1EC;border-radius:8px;padding:14px 16px}
+@media (max-width:560px){.infos{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.infos div{display:flex;flex-direction:column;min-width:0}
+.infos dt{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#5F5B53}
+.infos dd{margin:0;font-weight:500;overflow-wrap:anywhere}
+.sec{display:flex;flex-direction:column;gap:8px}
+.sec h4{margin:0;font-family:var(--display);font-weight:700;font-size:16px}
+.sec h4 .n{color:#B93F0E;margin-right:4px}
+.sec p{margin:0;white-space:pre-wrap}
+.sec ul{margin:0;padding-left:20px}
+.tbl{overflow-x:auto;border:1px solid #DDD8CE;border-radius:6px}
+.tbl table{border-collapse:collapse;width:100%;font-size:13px;min-width:420px}
+.tbl th{text-align:left;background:#F3F1EC;font-size:11px;text-transform:uppercase;color:#5F5B53;padding:7px 10px}
+.tbl td{padding:8px 10px;border-top:1px solid #DDD8CE;vertical-align:top}
+.sheet-photos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:480px){.sheet-photos{grid-template-columns:minmax(0,1fr)}}
+.sheet-photos figure{margin:0;display:flex;flex-direction:column;gap:6px}
+.sheet-photos img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px}
+.sheet-photos figcaption{font-size:12.5px}
+[contenteditable="true"]{border-radius:4px}
+[contenteditable="true"]:hover,[contenteditable="true"]:focus{background:#FBF1EA}
+.list{display:flex;flex-direction:column}
+.item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.item:first-child{border-top:0}
+.item .l{display:flex;flex-direction:column;min-width:0}
+.item .l span{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.item .r{display:flex;gap:6px;flex-shrink:0}
+.empty{color:var(--muted);font-size:14px}
+.mono{font-family:var(--mono);font-size:13px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--ground);padding:10px 16px;border-radius:12px;font-size:14px;z-index:50;max-width:calc(100% - 32px)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">batiria<span>.</span></div>
+    <div class="company" id="companyLabel"></div>
+  </header>
+  <div class="panel" id="installBox" hidden style="margin-bottom:12px;flex-direction:row;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px">
+    <span id="installText" style="font-size:14px">Installe Batiria sur ton téléphone pour l'ouvrir comme une appli.</span>
+    <button type="button" class="btn dark small" id="installBtn">Installer</button>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button type="button" role="tab" id="tab-rapport" aria-selected="true">Rapport</button>
+    <button type="button" role="tab" id="tab-historique" aria-selected="false">Historique</button>
+    <button type="button" role="tab" id="tab-reglages" aria-selected="false">Réglages</button>
+  </nav>
+
+  <!-- RAPPORT -->
+  <section class="view" id="view-rapport">
+    <div class="alert err" id="setupAlert" hidden>L'appli n'est pas encore reliée à Make. Va dans <strong>Réglages</strong> et colle l'adresse de ton webhook.</div>
+
+    <div id="captureBlock" style="display:flex;flex-direction:column;gap:16px">
+      <div class="panel">
+        <div class="row"><h2>Raconte ton intervention</h2>
+          <label class="f" style="flex-direction:row;align-items:center;gap:8px">Modèle <select id="f-model" style="width:auto;max-width:200px"></select></label>
+        </div>
+        <div class="rec">
+          <button type="button" class="recbtn" id="recBtn" aria-label="Démarrer l'enregistrement">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/></svg>
+          </button>
+          <div class="bars" id="bars" hidden><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="timer" id="timer">00:00</div>
+          <div class="recstate" id="recState">Appuie et raconte tout : le chantier, le client, avec qui t'étais, ce que t'as fait, ce que t'as vu, ce qui reste.</div>
+        </div>
+        <div id="playback" hidden style="display:flex;flex-direction:column;gap:10px">
+          <audio id="audio" controls></audio>
+          <button type="button" class="btn ghost small" id="redo">Recommencer l'enregistrement</button>
+        </div>
+        <details>
+          <summary>Ajouter un complément écrit (optionnel)</summary>
+          <textarea id="f-extra" rows="3" placeholder="Ex. : n° de commande 4521, référence lot 03…" style="margin-top:8px"></textarea>
+        </details>
+      </div>
+
+      <div class="panel">
+        <div class="row"><h2>Photos</h2><span class="pill" id="photoCount">0 photo</span></div>
+        <div class="photos" id="photoGrid"></div>
+        <div class="hint">Une légende courte par photo (« costière NE ») : l'IA la reformule.</div>
+      </div>
+
+      <button type="button" class="btn primary" id="generate" style="min-height:56px;font-size:16px">Rédiger le rapport</button>
+      <div class="status" id="genStatus" hidden><div class="spin"></div><span id="genStatusText">Envoi…</span><button type="button" class="btn ghost small" id="stopGen">Annuler</button></div>
+      <div class="alert err" id="genError" hidden></div>
+    </div>
+
+    <div id="resultBlock" hidden style="display:flex;flex-direction:column;gap:16px">
+      <div class="alert" id="checkAlert" hidden></div>
+      <div class="hint">Touche un texte pour le corriger.</div>
+      <article class="sheet" id="sheet"></article>
+      <div class="btns">
+        <button type="button" class="btn dark" id="pdfBtn">Télécharger le PDF</button>
+        <button type="button" class="btn" id="copyBtn">Copier le texte</button>
+      </div>
+      <div class="btns">
+        <button type="button" class="btn" id="saveBtn">Enregistrer</button>
+        <button type="button" class="btn ghost" id="newBtn">Nouveau rapport</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- HISTORIQUE -->
+  <section class="view" id="view-historique" hidden>
+    <div class="panel">
+      <h2>Rapports enregistrés</h2>
+      <div class="list" id="histList"></div>
+      <div class="hint">Gardés sur ce téléphone uniquement, sans les photos.</div>
+    </div>
+  </section>
+
+  <!-- REGLAGES -->
+  <section class="view" id="view-reglages" hidden>
+    <div class="panel">
+      <h2>Connexion à Make</h2>
+      <label class="f">Adresse du webhook<input type="url" id="s-webhook" placeholder="https://hook.eu2.make.com/…" autocomplete="off"></label>
+      <label class="f">Code d'accès<input type="password" id="s-key" autocomplete="off" placeholder="Le même que dans le filtre Make"></label>
+      <div class="hint">Le code d'accès empêche quelqu'un qui trouverait l'adresse d'utiliser ton compte OpenAI.</div>
+    </div>
+    <div class="panel">
+      <h2>Mon entreprise</h2>
+      <label class="f">Nom sur les rapports<input type="text" id="s-company"></label>
+      <label class="f">Logo (PNG ou JPG)<input type="file" id="s-logo" accept="image/png,image/jpeg"></label>
+      <div class="row" id="logoRow" hidden><img id="logoPreview" alt="Logo" style="max-height:44px;max-width:180px"><button type="button" class="btn ghost small" id="logoRemove">Retirer</button></div>
+    </div>
+    <div class="panel">
+      <div class="row"><h2>Modèles clients</h2><button type="button" class="btn dark small" id="newModel">Nouveau</button></div>
+      <div class="list" id="modelList"></div>
+    </div>
+    <div class="panel" id="modelEditor" hidden>
+      <div class="row"><h2 id="editorTitle">Nouveau modèle</h2><button type="button" class="btn ghost small" id="closeEditor">Fermer</button></div>
+      <label class="f">Nom<input type="text" id="m-nom" placeholder="Ex. : Bouygues Bâtiment"></label>
+      <label class="f">Destinataire<input type="text" id="m-dest" placeholder="Ex. : conducteur de travaux"></label>
+      <label class="f">Ton et consignes<textarea id="m-ton" rows="3"></textarea></label>
+      <label class="f">Sections, une par ligne<textarea id="m-sections" rows="6" class="mono"></textarea></label>
+      <div class="hint">Format : <span class="mono">Titre</span>, <span class="mono">Titre [liste]</span> ou <span class="mono">Titre [tableau: Col 1 | Col 2]</span></div>
+      <label class="f">Champs obligatoires, un par ligne<textarea id="m-champs" rows="3"></textarea></label>
+      <div class="btns"><button type="button" class="btn primary" id="saveModel">Enregistrer</button><button type="button" class="btn ghost" id="deleteModel" hidden>Supprimer</button></div>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+"use strict";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const store = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } }
+};
+let toastT;
+function toast(m){ const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2800); }
+const pad = (n) => String(n).padStart(2, "0");
+function todayFR(){ const d = new Date(); return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`; }
+
+/* ---------- Models ---------- */
+const BUILTIN = [
+  { id: "moe", nom: "MOE / Bureau d'études", dest: "maître d'œuvre ou bureau d'études",
+    ton: "Technique et factuel. Vocabulaire d'étanchéité exact (relevés, costières, EEP, pare-vapeur, isolant, protection lourde…). Phrases courtes. Ne cite une norme (DTU 43.1, etc.) que si la dictée la mentionne.",
+    sections: ["Objet de l'intervention", "Travaux réalisés [liste]", "Constats [liste]", "Réserves et non-conformités [tableau: Point | Localisation | Priorité]", "Actions à prévoir [tableau: Action | Responsable | Échéance]"],
+    champs: ["Référence marché / lot", "N° OS ou commande"] },
+  { id: "eg", nom: "Entreprise générale", dest: "conducteur de travaux de l'entreprise générale",
+    ton: "Synthétique, orienté planning et interfaces avec les autres corps d'état : ce qui est fait, ce qui bloque, qui doit agir.",
+    sections: ["Synthèse", "Travaux réalisés [liste]", "Avancement", "Points bloquants / interfaces autres lots [liste]", "Actions à prévoir [tableau: Action | Responsable | Échéance]"],
+    champs: ["Conducteur de travaux", "N° de lot"] },
+  { id: "syndic", nom: "Syndic / Particulier", dest: "syndic de copropriété ou particulier non technicien",
+    ton: "Simple et rassurant, sans jargon. Explique chaque terme technique en quelques mots. Vouvoiement.",
+    sections: ["En résumé", "Ce que nous avons fait [liste]", "Ce que nous avons constaté", "Nos recommandations [liste]"],
+    champs: ["Nom de la résidence"] }
+];
+let custom = store.get("bat.models", []);
+const allModels = () => [...BUILTIN, ...custom];
+const modelById = (id) => allModels().find(m => m.id === id) || BUILTIN[0];
+function parseSection(line){
+  const m = line.match(/^(.*?)\s*\[(.*)\]\s*$/);
+  if (!m) return { titre: line.trim(), format: "texte" };
+  if (/^liste$/i.test(m[2].trim())) return { titre: m[1].trim(), format: "liste" };
+  const t = m[2].match(/^\s*tableau\s*:\s*(.*)$/i);
+  if (t) return { titre: m[1].trim(), format: "tableau", colonnes: t[1].split("|").map(s => s.trim()).filter(Boolean) };
+  return { titre: line.trim(), format: "texte" };
+}
+
+/* ---------- State ---------- */
+const S = {
+  modelId: store.get("bat.model", "auto"),
+  webhook: store.get("bat.webhook", ""), key: store.get("bat.key", ""),
+  company: store.get("bat.company", "NOVHA ÉTANCHÉITÉ"), logo: store.get("bat.logo", null),
+  audio: null, audioExt: "webm", photos: [], report: null, meta: null
+};
+
+/* ---------- Tabs ---------- */
+["rapport", "historique", "reglages"].forEach(t => $("tab-" + t).addEventListener("click", () => showTab(t)));
+function showTab(name){
+  ["rapport", "historique", "reglages"].forEach(t => { $("tab-" + t).setAttribute("aria-selected", String(t === name)); $("view-" + t).hidden = t !== name; });
+  if (name === "historique") renderHistory();
+  if (name === "reglages") renderModelList();
+  if (name === "rapport") $("setupAlert").hidden = !!S.webhook;
+}
+
+/* ---------- Model select ---------- */
+function renderModelSelect(){
+  const sel = $("f-model");
+  sel.innerHTML = `<option value="auto">Automatique</option>` + allModels().map(m => `<option value="${esc(m.id)}">${esc(m.nom)}</option>`).join("");
+  sel.value = S.modelId === "auto" || allModels().some(m => m.id === S.modelId) ? S.modelId : "auto";
+}
+$("f-model").addEventListener("change", () => { S.modelId = $("f-model").value; store.set("bat.model", S.modelId); });
+
+/* ---------- Recorder ---------- */
+let rec = null, chunks = [], stream = null, t0 = 0, tick = null, analyser = null, raf = null, audioCtx = null;
+const MAX_SEC = 15 * 60;
+function pickMime(){
+  const c = ["audio/webm;codecs=opus", "audio/mp4", "audio/webm", "audio/ogg;codecs=opus"];
+  for (const m of c) if (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) return m;
+  return "";
+}
+function extFor(mime){ if (/mp4|aac|m4a/.test(mime)) return "m4a"; if (/ogg/.test(mime)) return "ogg"; if (/wav/.test(mime)) return "wav"; return "webm"; }
+async function startRec(){
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { toast("L'enregistrement n'est pas pris en charge par ce navigateur."); return; }
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+  catch { $("recState").textContent = "Micro refusé. Autorise le micro pour ce site dans les réglages du navigateur."; return; }
+  const mime = pickMime(); chunks = [];
+  rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+  rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+  rec.onstop = () => {
+    const type = rec.mimeType || mime || "audio/webm";
+    S.audio = new Blob(chunks, { type }); S.audioExt = extFor(type);
+    $("audio").src = URL.createObjectURL(S.audio); $("playback").hidden = false;
+    $("recState").textContent = "Enregistré. Écoute si tu veux, ajoute tes photos, puis lance la rédaction.";
+    stream.getTracks().forEach(t => t.stop()); stopMeter();
+  };
+  rec.start(1000); t0 = Date.now();
+  $("recBtn").classList.add("on"); $("recBtn").setAttribute("aria-label", "Arrêter l'enregistrement");
+  $("recBtn").innerHTML = `<svg width="38" height="38" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>`;
+  $("recState").textContent = "J'écoute… appuie à nouveau pour arrêter."; $("playback").hidden = true; $("bars").hidden = false;
+  tick = setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); $("timer").textContent = `${pad(Math.floor(s / 60))}:${pad(s % 60)}`; if (s >= MAX_SEC) stopRec(); }, 250);
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)(); const src = audioCtx.createMediaStreamSource(stream);
+    analyser = audioCtx.createAnalyser(); analyser.fftSize = 64; src.connect(analyser);
+    const data = new Uint8Array(analyser.frequencyBinCount); const bars = [...$("bars").children];
+    const draw = () => { analyser.getByteFrequencyData(data); bars.forEach((b, i) => b.style.height = (6 + (data[i + 2] / 255) * 22) + "px"); raf = requestAnimationFrame(draw); };
+    if (!matchMedia("(prefers-reduced-motion: reduce)").matches) draw();
+  } catch {}
+}
+function stopMeter(){ cancelAnimationFrame(raf); try { audioCtx && audioCtx.close(); } catch {} $("bars").hidden = true; }
+function stopRec(){
+  clearInterval(tick);
+  if (rec && rec.state !== "inactive") rec.stop();
+  $("recBtn").classList.remove("on"); $("recBtn").setAttribute("aria-label", "Démarrer l'enregistrement");
+  $("recBtn").innerHTML = `<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/></svg>`;
+}
+$("recBtn").addEventListener("click", () => { if (rec && rec.state === "recording") stopRec(); else { if (S.audio) return toast("Touche « Recommencer » pour refaire le vocal."); startRec(); } });
+$("redo").addEventListener("click", () => { S.audio = null; $("playback").hidden = true; $("timer").textContent = "00:00"; startRec(); });
+
+/* ---------- Photos ---------- */
+function renderPhotos(){
+  const g = $("photoGrid"); g.innerHTML = "";
+  S.photos.forEach((p, i) => {
+    const d = document.createElement("div"); d.className = "ph";
+    d.innerHTML = `<div class="img"><img alt="Photo ${i + 1}" src="${p.url}"><button type="button" class="rm" aria-label="Retirer la photo ${i + 1}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><input type="text" aria-label="Légende photo ${i + 1}" placeholder="Photo ${i + 1} : légende">`;
+    const inp = d.querySelector("input"); inp.value = p.caption; inp.addEventListener("input", () => p.caption = inp.value);
+    d.querySelector(".rm").addEventListener("click", () => { URL.revokeObjectURL(p.url); S.photos.splice(i, 1); renderPhotos(); });
+    g.appendChild(d);
+  });
+  const add = document.createElement("label"); add.className = "add-photo";
+  add.innerHTML = `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Ajouter<input type="file" accept="image/*" multiple aria-label="Ajouter des photos">`;
+  add.querySelector("input").addEventListener("change", (e) => addPhotos(e.target.files));
+  g.appendChild(add);
+  const n = S.photos.length; $("photoCount").textContent = n + (n > 1 ? " photos" : " photo");
+}
+function loadImage(file){ return new Promise((res, rej) => { const u = URL.createObjectURL(file); const im = new Image(); im.onload = () => res({ im, u }); im.onerror = () => { URL.revokeObjectURL(u); rej(); }; im.src = u; }); }
+async function addPhotos(files){
+  for (const f of Array.from(files || [])) {
+    try {
+      const { im, u } = await loadImage(f); const r = Math.min(1, 1600 / Math.max(im.naturalWidth, im.naturalHeight));
+      const w = Math.round(im.naturalWidth * r), h = Math.round(im.naturalHeight * r);
+      const c = document.createElement("canvas"); c.width = w; c.height = h; c.getContext("2d").drawImage(im, 0, 0, w, h); URL.revokeObjectURL(u);
+      const blob = await new Promise(r2 => c.toBlob(r2, "image/jpeg", 0.82)); if (!blob) continue;
+      S.photos.push({ blob, url: URL.createObjectURL(blob), w, h, caption: "" });
+    } catch { toast("Une photo n'a pas pu être lue."); }
+  }
+  renderPhotos();
+}
+const blobToDataURL = (b) => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(b); });
+
+/* ---------- Prompt (sent to Make; Make replaces [[DICTEE]] with the Whisper transcript) ---------- */
+const INFO_KEYS = [["chantier", "Chantier"], ["adresse", "Adresse"], ["client", "Client"], ["intervenant", "Intervenant(s)"], ["date", "Date"], ["meteo", "Météo"]];
+function modelSpec(m){
+  return m.sections.map(parseSection).map((s, i) => {
+    if (s.format === "liste") return `  ${i + 1}. "${s.titre}" — {"titre","format":"liste","items":[string,...]}`;
+    if (s.format === "tableau") return `  ${i + 1}. "${s.titre}" — {"titre","format":"tableau","colonnes":${JSON.stringify(s.colonnes)},"lignes":[[...],...]}`;
+    return `  ${i + 1}. "${s.titre}" — {"titre","format":"texte","texte":string}`;
+  }).join("\n");
+}
+function buildPrompt(choice, extra, captions){
+  const models = choice === "auto" ? allModels() : [modelById(choice)];
+  const mt = models.map(m => `MODÈLE id="${m.id}" — ${m.nom}\n  Destinataire : ${m.dest}\n  Ton : ${m.ton}\n  Champs obligatoires : ${m.champs.length ? m.champs.map(c => `"${c}"`).join(", ") : "aucun"}\n  Sections, dans cet ordre exact :\n${modelSpec(m)}`).join("\n\n");
+  return `Tu es l'assistant de rédaction d'une entreprise d'étanchéité et de couverture en France. Un technicien a dicté d'un seul trait tout son compte rendu (infos du chantier comprises) ; la transcription automatique peut contenir des erreurs de mots, corrige-les d'après le contexte métier. Rédige un rapport d'intervention professionnel en français.
+
+${choice === "auto" ? `CHOIX DU MODÈLE : choisis le modèle le plus adapté au client mentionné (syndic ou particulier → "syndic" ; maître d'œuvre, architecte, bureau d'études → "moe" ; entreprise générale, major du BTP → "eg" ; un modèle personnalisé si son nom correspond). En cas de doute : "moe".` : `Utilise ce modèle ("modele_id": "${models[0].id}").`}
+
+${mt}
+
+RÈGLES
+- Extrais les infos du chantier : chantier, adresse ou ville, client, intervenant(s), date, météo. Date du jour : ${todayFR()} (à utiliser si aucune autre date n'est dite). Info absente → "" et mention dans "a_verifier".
+- N'invente AUCUN fait, mesure, quantité, date ou matériau absent de la dictée. Reformule proprement, corrige le vocabulaire technique, supprime les hésitations.
+- Section sans contenu : "Néant." (texte), liste vide, ou tableau sans ligne. Échéances relatives ("demain") → date JJ/MM/AAAA.
+- "a_verifier" : chaque point ambigu, approximatif ou manquant à vérifier avant envoi, y compris les champs obligatoires non trouvés (mettre "" dans "champs").
+
+PHOTOS (${captions.length}) : ${captions.length ? captions.map((c, i) => `photo ${i + 1} = "${c || "sans légende"}"`).join(" ; ") : "aucune"}. Rédige une légende propre pour chacune à partir de la légende et de la dictée.
+
+DICTÉE
+"""
+[[DICTEE]]
+"""${extra ? `\n\nCOMPLÉMENT ÉCRIT DU TECHNICIEN\n"""\n${extra}\n"""` : ""}
+
+Réponds UNIQUEMENT avec un objet JSON, sans texte autour :
+{"modele_id": "...", "titre": "Rapport d'intervention", "infos": {"chantier": "", "adresse": "", "client": "", "intervenant": "", "date": "JJ/MM/AAAA", "meteo": ""}, "champs": {"<champ obligatoire>": ""}, "sections": [ ... ], "photos": [{"n": 1, "legende": ""}], "a_verifier": [""]}`;
+}
+function parseReply(txt){
+  let t = String(txt || "").trim();
+  const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/); if (fence) t = fence[1];
+  const a = t.indexOf("{"), b = t.lastIndexOf("}"); if (a < 0 || b < a) throw { code: "invalid_json" };
+  let o = JSON.parse(t.slice(a, b + 1));
+  if (o && typeof o.rapport === "object") o = o.rapport;
+  if (o && typeof o.rapport === "string") o = parseReply(o.rapport);
+  return o;
+}
+function normalize(r, model){
+  const out = { titre: String(r?.titre || "Rapport d'intervention"), infos: {}, champs: {}, sections: [], photos: [], a_verifier: [] };
+  INFO_KEYS.forEach(([k]) => out.infos[k] = String(r?.infos?.[k] ?? ""));
+  if (!out.infos.date) out.infos.date = todayFR();
+  const inS = Array.isArray(r?.sections) ? r.sections : [];
+  model.sections.map(parseSection).forEach((s, i) => {
+    const g = inS.find(x => x && x.titre === s.titre) || inS[i] || {};
+    if (s.format === "liste") out.sections.push({ titre: s.titre, format: "liste", items: (Array.isArray(g.items) ? g.items : []).map(String) });
+    else if (s.format === "tableau") out.sections.push({ titre: s.titre, format: "tableau", colonnes: s.colonnes, lignes: (Array.isArray(g.lignes) ? g.lignes : []).map(row => s.colonnes.map((_, j) => String((Array.isArray(row) ? row[j] : "") ?? ""))) });
+    else out.sections.push({ titre: s.titre, format: "texte", texte: String(g.texte ?? "Néant.") });
+  });
+  model.champs.forEach(c => out.champs[c] = String(r?.champs?.[c] ?? ""));
+  out.photos = (Array.isArray(r?.photos) ? r.photos : []).map(p => ({ n: Number(p?.n) || 0, legende: String(p?.legende || "") }));
+  out.a_verifier = (Array.isArray(r?.a_verifier) ? r.a_verifier : []).map(String).filter(Boolean);
+  return out;
+}
+
+/* ---------- Generate ---------- */
+let ctl = null;
+$("generate").addEventListener("click", async () => {
+  $("genError").hidden = true;
+  const fail = (m) => { $("genError").textContent = m; $("genError").hidden = false; };
+  if (!S.webhook) return fail("Ajoute d'abord l'adresse du webhook Make dans Réglages.");
+  if (rec && rec.state === "recording") stopRec();
+  if (!S.audio) return fail("Enregistre d'abord ton vocal (gros bouton micro).");
+  const choice = S.modelId, extra = $("f-extra").value.trim();
+  const fd = new FormData();
+  fd.append("audio", S.audio, `dictee.${S.audioExt}`);
+  fd.append("prompt", buildPrompt(choice, extra, S.photos.map(p => p.caption.trim())));
+  fd.append("cle", S.key || "");
+  ctl = new AbortController(); const start = Date.now();
+  $("genStatus").hidden = false; $("generate").disabled = true;
+  const tk = setInterval(() => { const s = Math.round((Date.now() - start) / 1000); $("genStatusText").textContent = s < 8 ? "Envoi du vocal…" : `Transcription et rédaction… ${s} s`; }, 500);
+  try {
+    const res = await fetch(S.webhook, { method: "POST", body: fd, signal: ctl.signal });
+    const txt = await res.text();
+    if (!res.ok) throw { code: "http", status: res.status, txt };
+    if (/^\s*accepted\s*$/i.test(txt)) throw { code: "accepted" };
+    const r = parseReply(txt);
+    const model = choice === "auto" ? modelById(String(r?.modele_id || "moe")) : modelById(choice);
+    S.report = normalize(r, model);
+    S.meta = { modelId: model.id, modelNom: model.nom, num: "RI-" + new Date().toISOString().slice(0, 10).replace(/-/g, "") + "-" + Math.floor(100 + Math.random() * 900) };
+    renderReport(); $("captureBlock").hidden = true; $("resultBlock").hidden = false; window.scrollTo(0, 0);
+  } catch (e) {
+    if (e?.name === "AbortError") {}
+    else if (e?.code === "accepted") fail("Make a répondu « Accepted » : il manque le module « Webhook response » à la fin du scénario, ou le scénario a mis trop de temps.");
+    else if (e?.code === "http") fail(`Make a renvoyé une erreur (${e.status}). Ouvre l'historique du scénario dans Make pour voir quel module a échoué.`);
+    else if (e?.code === "invalid_json" || e instanceof SyntaxError) fail("La réponse de l'IA n'était pas au bon format. Relance ; si ça recommence, vérifie le module OpenAI (réponse en JSON).");
+    else fail("Impossible de joindre Make. Vérifie ta connexion, l'adresse du webhook, que le scénario est activé et que la réponse contient l'en-tête Access-Control-Allow-Origin.");
+  } finally { clearInterval(tk); $("genStatus").hidden = true; $("generate").disabled = false; }
+});
+$("stopGen").addEventListener("click", () => ctl?.abort());
+$("newBtn").addEventListener("click", () => {
+  S.report = null; S.audio = null; S.photos.forEach(p => URL.revokeObjectURL(p.url)); S.photos = [];
+  $("playback").hidden = true; $("timer").textContent = "00:00"; $("f-extra").value = "";
+  $("recState").textContent = "Appuie et raconte tout : le chantier, le client, avec qui t'étais, ce que t'as fait, ce que t'as vu, ce qui reste.";
+  renderPhotos(); $("resultBlock").hidden = true; $("captureBlock").hidden = false; window.scrollTo(0, 0);
+});
+
+/* ---------- Render report ---------- */
+function ed(path, text, tag = "span"){ return `<${tag} contenteditable="true" data-p="${esc(path)}">${esc(text)}</${tag}>`; }
+function setPath(o, path, v){ const k = path.split("."); for (let i = 0; i < k.length - 1; i++) o = o[k[i]]; o[k[k.length - 1]] = v; }
+function renderReport(){
+  const r = S.report, m = S.meta;
+  let h = `<div class="hd"><div style="display:flex;flex-direction:column;gap:6px">${S.logo ? `<img src="${S.logo}" alt="Logo">` : `<div class="co">${esc(S.company)}</div>`}${ed("titre", r.titre, "h3")}</div><div class="meta"><b>N° ${esc(m.num)}</b><span>Modèle : ${esc(m.modelNom)}</span></div></div>`;
+  h += `<dl class="infos">${INFO_KEYS.map(([k, lab]) => `<div><dt>${esc(lab)}</dt><dd>${ed("infos." + k, r.infos[k] || "À compléter")}</dd></div>`).join("")}${Object.keys(r.champs).map((k, i) => `<div><dt>${esc(k)}</dt><dd>${ed("champ." + i, r.champs[k] || "À compléter")}</dd></div>`).join("")}</dl>`;
+  r.sections.forEach((s, i) => {
+    h += `<div class="sec"><h4><span class="n">${i + 1}.</span>${esc(s.titre)}</h4>`;
+    if (s.format === "texte") h += ed(`sections.${i}.texte`, s.texte, "p");
+    else if (s.format === "liste") h += s.items.length ? `<ul>${s.items.map((it, j) => `<li>${ed(`sections.${i}.items.${j}`, it)}</li>`).join("")}</ul>` : `<p style="color:#5F5B53">Néant.</p>`;
+    else h += `<div class="tbl"><table><thead><tr>${s.colonnes.map(c => `<th scope="col">${esc(c)}</th>`).join("")}</tr></thead><tbody>${s.lignes.length ? s.lignes.map((row, a) => `<tr>${row.map((c, b) => `<td>${ed(`sections.${i}.lignes.${a}.${b}`, c)}</td>`).join("")}</tr>`).join("") : `<tr><td colspan="${s.colonnes.length}" style="color:#5F5B53">Néant.</td></tr>`}</tbody></table></div>`;
+    h += `</div>`;
+  });
+  if (S.photos.length) {
+    h += `<div class="sec"><h4><span class="n">${r.sections.length + 1}.</span>Photos</h4><div class="sheet-photos">`;
+    S.photos.forEach((p, i) => {
+      let idx = r.photos.findIndex(x => x.n === i + 1);
+      if (idx < 0) { r.photos.push({ n: i + 1, legende: p.caption || "" }); idx = r.photos.length - 1; }
+      h += `<figure><img src="${p.url}" alt="Photo ${i + 1}"><figcaption><strong>Photo ${i + 1}</strong> — ${ed(`photos.${idx}.legende`, r.photos[idx].legende || "Légende à compléter")}</figcaption></figure>`;
+    });
+    h += `</div></div>`;
+  }
+  $("sheet").innerHTML = h;
+  const miss = [...INFO_KEYS.filter(([k]) => !r.infos[k]).map(([, l]) => `${l} non renseigné(e)`), ...Object.keys(r.champs).filter(k => !r.champs[k]).map(k => `« ${k} » à compléter`)];
+  const all = [...new Set([...miss, ...r.a_verifier])];
+  $("checkAlert").hidden = !all.length;
+  $("checkAlert").innerHTML = `<strong>À vérifier avant envoi</strong><ul>${all.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
+}
+$("sheet").addEventListener("input", (e) => {
+  const el = e.target.closest("[data-p]"); if (!el) return; const p = el.dataset.p, v = el.innerText.trim();
+  if (p.startsWith("champ.")) { const k = Object.keys(S.report.champs)[Number(p.slice(6))]; S.report.champs[k] = v; }
+  else setPath(S.report, p, p.endsWith(".texte") ? el.innerText : v);
+});
+$("sheet").addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.closest("span[data-p],h3[data-p]")) e.preventDefault(); });
+
+/* ---------- Copy ---------- */
+function reportText(){
+  const r = S.report, L = [`${S.company} — ${r.titre}`, `N° ${S.meta.num}`, ""];
+  INFO_KEYS.forEach(([k, l]) => L.push(`${l} : ${r.infos[k] || "—"}`));
+  Object.entries(r.champs).forEach(([k, v]) => L.push(`${k} : ${v || "À compléter"}`));
+  r.sections.forEach((s, i) => {
+    L.push("", `${i + 1}. ${s.titre.toUpperCase()}`);
+    if (s.format === "texte") L.push(s.texte);
+    else if (s.format === "liste") (s.items.length ? s.items : ["Néant."]).forEach(x => L.push("- " + x));
+    else { if (!s.lignes.length) L.push("Néant."); s.lignes.forEach(row => L.push("- " + s.colonnes.map((c, j) => `${c} : ${row[j] || "—"}`).join(" · "))); }
+  });
+  if (S.photos.length) { L.push("", "PHOTOS"); S.photos.forEach((_, i) => L.push(`Photo ${i + 1} — ${r.photos.find(x => x.n === i + 1)?.legende || ""}`)); }
+  return L.join("\n");
+}
+$("copyBtn").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(reportText()); toast("Texte copié"); }
+  catch { const ta = document.createElement("textarea"); ta.value = reportText(); ta.rows = 10; ta.setAttribute("aria-label", "Texte du rapport"); $("sheet").after(ta); ta.select(); toast("Sélectionne et copie le texte"); }
+});
+
+/* ---------- PDF ---------- */
+const pdfSafe = (s) => String(s ?? "").replace(/[  ]/g, " ").replace(/[→⇒]/g, "->").replace(/≥/g, ">=").replace(/≤/g, "<=").replace(/[‐‑]/g, "-").replace(/…/g, "...").replace(/[^\x00-\xFF€’‘“”–—•œŒ]/g, "");
+async function buildPdf(){
+  const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const r = S.report, m = S.meta, W = 210, M = 16, CW = W - 2 * M; let y = M;
+  const INK = [27, 26, 23], MUTED = [95, 91, 83], ACC = [185, 63, 14], LINE = [221, 216, 206], SOFT = [243, 241, 236];
+  const need = (h) => { if (y + h > 279) { doc.addPage(); y = M; } };
+  if (S.logo) { try { const pr = doc.getImageProperties(S.logo); const h = 14; doc.addImage(S.logo, M, y, Math.min(50, pr.width / pr.height * h), h); } catch {} }
+  else { doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.setTextColor(...INK); doc.text(pdfSafe(S.company), M, y + 6); }
+  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...MUTED);
+  doc.text(pdfSafe(`N° ${m.num}`), W - M, y + 4, { align: "right" }); doc.text(pdfSafe(`Émis le ${todayFR()}`), W - M, y + 9, { align: "right" });
+  y += 22; doc.setFont("helvetica", "bold"); doc.setFontSize(19); doc.setTextColor(...INK);
+  const tl = doc.splitTextToSize(pdfSafe(r.titre), CW); doc.text(tl, M, y); y += tl.length * 7.5;
+  doc.setDrawColor(...INK); doc.setLineWidth(0.8); doc.line(M, y, W - M, y); y += 6;
+  const infos = [...INFO_KEYS.map(([k, l]) => [l, r.infos[k] || "—"]), ...Object.entries(r.champs).map(([k, v]) => [k, v || "À compléter"])];
+  const rows = []; for (let i = 0; i < infos.length; i += 2) rows.push([infos[i][0], infos[i][1], infos[i + 1]?.[0] || "", infos[i + 1]?.[1] || ""].map(pdfSafe));
+  doc.autoTable({ startY: y, body: rows, theme: "plain", margin: { left: M, right: M }, styles: { fontSize: 9, cellPadding: 1.8, textColor: INK, fillColor: SOFT }, columnStyles: { 0: { fontStyle: "bold", textColor: MUTED, cellWidth: 32 }, 2: { fontStyle: "bold", textColor: MUTED, cellWidth: 32 } } });
+  y = doc.lastAutoTable.finalY + 8;
+  const heading = (n, t) => { need(16); doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.setTextColor(...ACC); doc.text(`${n}.`, M, y); doc.setTextColor(...INK); doc.text(pdfSafe(t), M + 7, y); y += 6; doc.setFont("helvetica", "normal"); doc.setFontSize(10); };
+  r.sections.forEach((s, i) => {
+    heading(i + 1, s.titre);
+    if (s.format === "texte") doc.splitTextToSize(pdfSafe(s.texte || "Néant."), CW).forEach(l => { need(5); doc.text(l, M, y); y += 4.8; });
+    else if (s.format === "liste") (s.items.length ? s.items : ["Néant."]).forEach(it => { doc.splitTextToSize(pdfSafe(it), CW - 5).forEach((l, k) => { need(5); if (!k) doc.text("•", M + 1, y); doc.text(l, M + 5, y); y += 4.8; }); y += 0.8; });
+    else { doc.autoTable({ startY: y, head: [s.colonnes.map(pdfSafe)], body: s.lignes.length ? s.lignes.map(row => row.map(pdfSafe)) : [[{ content: "Néant.", colSpan: s.colonnes.length }]], theme: "grid", margin: { left: M, right: M, top: M, bottom: 18 }, styles: { fontSize: 9, cellPadding: 2.2, textColor: INK, lineColor: LINE, lineWidth: 0.2 }, headStyles: { fillColor: SOFT, textColor: MUTED, fontStyle: "bold", fontSize: 8 } }); y = doc.lastAutoTable.finalY; }
+    y += 6;
+  });
+  if (S.photos.length) {
+    heading(r.sections.length + 1, "Photos");
+    const cw = (CW - 6) / 2;
+    for (let i = 0; i < S.photos.length; i += 2) {
+      const pair = S.photos.slice(i, i + 2);
+      const dims = pair.map(p => { let h = cw * p.h / p.w; if (h > 75) h = 75; return { w: Math.min(cw, h * p.w / p.h), h }; });
+      const caps = pair.map((p, k) => doc.splitTextToSize(pdfSafe(`Photo ${i + k + 1} — ${r.photos.find(x => x.n === i + k + 1)?.legende || p.caption || ""}`), cw));
+      const rowH = Math.max(...dims.map(d => d.h)) + 3 + Math.max(...caps.map(c => c.length)) * 4.2 + 5; need(rowH);
+      for (let k = 0; k < pair.length; k++) { const x = M + k * (cw + 6); doc.addImage(await blobToDataURL(pair[k].blob), "JPEG", x, y, dims[k].w, dims[k].h); doc.setFontSize(8.5); doc.setTextColor(...INK); doc.text(caps[k], x, y + dims[k].h + 4); }
+      y += rowH;
+    }
+  }
+  const n = doc.getNumberOfPages();
+  for (let p = 1; p <= n; p++) { doc.setPage(p); doc.setDrawColor(...LINE); doc.setLineWidth(0.2); doc.line(M, 285, W - M, 285); doc.setFontSize(8); doc.setTextColor(...MUTED); doc.text(pdfSafe(`${S.company} · ${r.infos.chantier || ""}`), M, 290); doc.text(`Page ${p} / ${n}`, W - M, 290, { align: "right" }); }
+  return doc;
+}
+$("pdfBtn").addEventListener("click", async () => {
+  if (!window.jspdf) return toast("Le générateur PDF n'a pas chargé (connexion ?).");
+  $("pdfBtn").disabled = true;
+  try {
+    const doc = await buildPdf();
+    const slug = (S.report.infos.chantier || "chantier").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+    const name = `${S.meta.num}_${slug}.pdf`; const blob = doc.output("blob");
+    const file = new File([blob], name, { type: "application/pdf" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: name }); return; } catch (e) { if (e?.name === "AbortError") return; } }
+    doc.save(name);
+  } catch { toast("Le PDF n'a pas pu être créé."); }
+  finally { $("pdfBtn").disabled = false; }
+});
+
+/* ---------- History (local) ---------- */
+$("saveBtn").addEventListener("click", () => {
+  const h = store.get("bat.hist", []); const i = h.findIndex(x => x.meta.num === S.meta.num);
+  const entry = { at: new Date().toISOString(), meta: S.meta, report: S.report, nbPhotos: S.photos.length };
+  if (i >= 0) h[i] = entry; else h.unshift(entry);
+  toast(store.set("bat.hist", h.slice(0, 60)) ? "Rapport enregistré" : "Mémoire du téléphone pleine : supprime d'anciens rapports.");
+});
+let pendingDel = null;
+function renderHistory(){
+  const h = store.get("bat.hist", []), box = $("histList"); box.innerHTML = "";
+  if (!h.length) { box.innerHTML = `<div class="empty">Aucun rapport enregistré pour l'instant.</div>`; return; }
+  h.forEach((v, idx) => {
+    const it = document.createElement("div"); it.className = "item";
+    it.innerHTML = `<div class="l"><strong>${esc(v.report.infos?.chantier || "Chantier")}</strong><span><span class="mono">${esc(v.meta.num)}</span> · ${esc(v.report.infos?.date || "")} · ${esc(v.meta.modelNom)}</span></div><div class="r"><button type="button" class="btn small">Ouvrir</button><button type="button" class="btn ghost small">${pendingDel === v.meta.num ? "Confirmer" : "Supprimer"}</button></div>`;
+    const [o, d] = it.querySelectorAll("button");
+    o.addEventListener("click", () => { S.meta = v.meta; S.report = v.report; S.photos = []; renderPhotos(); renderReport(); showTab("rapport"); $("captureBlock").hidden = true; $("resultBlock").hidden = false; if (v.nbPhotos) toast("Les photos ne sont pas gardées dans l'historique."); });
+    d.addEventListener("click", () => { if (pendingDel !== v.meta.num) { pendingDel = v.meta.num; return renderHistory(); } pendingDel = null; const a = store.get("bat.hist", []); a.splice(idx, 1); store.set("bat.hist", a); renderHistory(); });
+    box.appendChild(it);
+  });
+}
+
+/* ---------- Settings ---------- */
+$("s-webhook").value = S.webhook; $("s-key").value = S.key; $("s-company").value = S.company;
+$("s-webhook").addEventListener("change", () => { S.webhook = $("s-webhook").value.trim(); store.set("bat.webhook", S.webhook); toast("Adresse enregistrée"); });
+$("s-key").addEventListener("change", () => { S.key = $("s-key").value; store.set("bat.key", S.key); toast("Code enregistré"); });
+$("s-company").addEventListener("input", () => { S.company = $("s-company").value || "Mon entreprise"; store.set("bat.company", S.company); $("companyLabel").textContent = S.company; });
+function renderCompany(){ $("companyLabel").textContent = S.company; $("logoRow").hidden = !S.logo; if (S.logo) $("logoPreview").src = S.logo; }
+$("s-logo").addEventListener("change", async (e) => {
+  const f = e.target.files?.[0]; if (!f) return;
+  try { const { im, u } = await loadImage(f); const r = Math.min(1, 400 / im.naturalWidth); const c = document.createElement("canvas"); c.width = Math.round(im.naturalWidth * r); c.height = Math.round(im.naturalHeight * r); const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u); S.logo = c.toDataURL("image/jpeg", 0.9); store.set("bat.logo", S.logo); renderCompany(); toast("Logo ajouté"); }
+  catch { toast("Ce logo n'a pas pu être lu."); }
+});
+$("logoRemove").addEventListener("click", () => { S.logo = null; store.set("bat.logo", null); renderCompany(); });
+
+let editing = null;
+function renderModelList(){
+  const box = $("modelList"); box.innerHTML = "";
+  allModels().forEach(m => {
+    const std = BUILTIN.some(b => b.id === m.id); const it = document.createElement("div"); it.className = "item";
+    it.innerHTML = `<div class="l"><strong>${esc(m.nom)} <span class="pill ${std ? "" : "ok"}">${std ? "Standard" : "Client"}</span></strong><span>${esc(m.sections.map(s => parseSection(s).titre).join(" · "))}</span></div><div class="r"><button type="button" class="btn small">${std ? "Dupliquer" : "Modifier"}</button></div>`;
+    it.querySelector("button").addEventListener("click", () => openEditor(m, std)); box.appendChild(it);
+  });
+}
+function openEditor(m, copy){
+  editing = m && !copy ? m.id : null; $("editorTitle").textContent = editing ? "Modifier le modèle" : "Nouveau modèle";
+  $("m-nom").value = m ? (copy ? m.nom + " (copie)" : m.nom) : ""; $("m-dest").value = m?.dest || ""; $("m-ton").value = m?.ton || "";
+  $("m-sections").value = (m?.sections || ["Objet de l'intervention", "Travaux réalisés [liste]", "Constats [liste]", "Actions à prévoir [tableau: Action | Responsable | Échéance]"]).join("\n");
+  $("m-champs").value = (m?.champs || []).join("\n"); $("deleteModel").hidden = !editing; $("deleteModel").textContent = "Supprimer";
+  $("modelEditor").hidden = false; $("modelEditor").scrollIntoView({ block: "start" });
+}
+$("newModel").addEventListener("click", () => openEditor(null, false));
+$("closeEditor").addEventListener("click", () => $("modelEditor").hidden = true);
+$("saveModel").addEventListener("click", () => {
+  const nom = $("m-nom").value.trim(), sections = $("m-sections").value.split("\n").map(s => s.trim()).filter(Boolean);
+  if (!nom || !sections.length) return toast("Donne un nom et au moins une section.");
+  const id = editing || "m" + Date.now().toString(36);
+  const data = { id, nom, dest: $("m-dest").value.trim() || "client", ton: $("m-ton").value.trim() || "Professionnel et factuel.", sections, champs: $("m-champs").value.split("\n").map(s => s.trim()).filter(Boolean) };
+  const i = custom.findIndex(x => x.id === id); if (i >= 0) custom[i] = data; else custom.push(data);
+  store.set("bat.models", custom); $("modelEditor").hidden = true; renderModelList(); renderModelSelect(); toast("Modèle enregistré");
+});
+$("deleteModel").addEventListener("click", () => {
+  if ($("deleteModel").textContent !== "Confirmer la suppression") { $("deleteModel").textContent = "Confirmer la suppression"; return; }
+  custom = custom.filter(x => x.id !== editing); store.set("bat.models", custom); $("modelEditor").hidden = true; renderModelList(); renderModelSelect(); toast("Modèle supprimé");
+});
+
+/* ---------- Install (PWA) ---------- */
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+let deferredPrompt = null;
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredPrompt = e; if (!standalone) $("installBox").hidden = false; });
+$("installBtn").addEventListener("click", async () => {
+  if (deferredPrompt) { deferredPrompt.prompt(); try { await deferredPrompt.userChoice; } catch {} deferredPrompt = null; $("installBox").hidden = true; }
+  else $("installBox").hidden = true;
+});
+window.addEventListener("appinstalled", () => { $("installBox").hidden = true; toast("Batiria est installée"); });
+if (!standalone && /iphone|ipad|ipod/i.test(navigator.userAgent)) {
+  $("installText").innerHTML = "Pour installer : touche <strong>Partager</strong> puis <strong>Sur l'écran d'accueil</strong>.";
+  $("installBtn").textContent = "OK"; $("installBox").hidden = false;
+}
+
+/* ---------- Init ---------- */
+renderCompany(); renderModelSelect(); renderPhotos(); $("setupAlert").hidden = !!S.webhook;
+})();
+</script>
+</body>
+</html>
