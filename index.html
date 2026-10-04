@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 /* Batiria — identité du site : bleu nuit, bleu vif, capitales grasses, étiquettes mono, cadres droits */
 :root{
@@ -113,7 +114,8 @@ details summary{cursor:pointer;font:500 12px var(--mono);letter-spacing:1px;text
 .sec p{margin:0;white-space:pre-wrap}
 .sec ul{margin:0;padding-left:20px}
 .tbl{overflow-x:auto;border:1px solid #D3D8E6}
-.tbl table{border-collapse:collapse;width:100%;font-size:13px;min-width:420px}
+.tbl table{border-collapse:collapse;width:100%;font-size:13px;table-layout:fixed}
+.tbl td,.tbl th{overflow-wrap:anywhere}
 .tbl th{text-align:left;background:#E8EBF4;font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#5B6488;padding:7px 10px;font-weight:500}
 .tbl td{padding:8px 10px;border-top:1px solid #D3D8E6;vertical-align:top}
 .sheet-photos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
@@ -194,8 +196,11 @@ details summary{cursor:pointer;font:500 12px var(--mono);letter-spacing:1px;text
       <div class="alert" id="checkAlert" hidden></div>
       <div class="tag"><b>03</b>Rapport d'intervention · touche un texte pour le corriger</div>
       <article class="sheet" id="sheet"></article>
+      <button type="button" class="btn primary" id="sendBtn" style="min-height:58px;font-size:15px">Envoyer au bureau</button>
+      <div class="hint" id="sendHint"></div>
       <div class="btns">
-        <button type="button" class="btn dark" id="pdfBtn">Télécharger le PDF</button>
+        <button type="button" class="btn" id="pdfBtn">Télécharger le PDF</button>
+        <button type="button" class="btn" id="wordBtn">Télécharger le Word</button>
         <button type="button" class="btn" id="copyBtn">Copier le texte</button>
       </div>
       <div class="btns">
@@ -221,6 +226,14 @@ details summary{cursor:pointer;font:500 12px var(--mono);letter-spacing:1px;text
       <label class="f">Adresse du webhook<input type="url" id="s-webhook" placeholder="https://hook.eu2.make.com/…" autocomplete="off"></label>
       <label class="f">Code d'accès<input type="password" id="s-key" autocomplete="off" placeholder="Le même que dans le filtre Make"></label>
       <div class="hint">Le code d'accès empêche quelqu'un qui trouverait l'adresse d'utiliser ton compte OpenAI.</div>
+    </div>
+    <div class="panel">
+      <div class="tag"><b>→</b>Envoi automatique</div>
+      <h2>Envoi au bureau</h2>
+      <label class="f">E-mail de l'admin (destinataire des rapports)<input type="text" inputmode="email" id="s-admin" autocomplete="off" placeholder="bureau@monentreprise.fr"></label>
+      <label class="f">Copie à (optionnel)<input type="text" inputmode="email" id="s-cc" autocomplete="off" placeholder="conducteur@monentreprise.fr"></label>
+      <label class="f">Adresse du webhook d'envoi<input type="url" id="s-mailhook" autocomplete="off" placeholder="https://hook.eu1.make.com/…"></label>
+      <div class="hint">Le bouton « Envoyer au bureau » envoie le rapport en PDF et en Word à cette adresse, sans rien demander au technicien. Même code d'accès que ci-dessus.</div>
     </div>
     <div class="panel">
       <h2>Mon entreprise</h2>
@@ -291,6 +304,7 @@ function parseSection(line){
 const S = {
   modelId: store.get("bat.model", "auto"),
   webhook: store.get("bat.webhook", ""), key: store.get("bat.key", ""),
+  admin: store.get("bat.admin", ""), cc: store.get("bat.cc", ""), mailhook: store.get("bat.mailhook", ""),
   company: store.get("bat.company", "Mon entreprise"), logo: store.get("bat.logo", null),
   audio: null, audioExt: "webm", photos: [], report: null, meta: null
 };
@@ -515,6 +529,7 @@ function renderReport(){
     h += `</div></div>`;
   }
   $("sheet").innerHTML = h;
+  $("sendBtn").textContent = S.meta?.sentTo ? "Envoyé ✓ · renvoyer" : "Envoyer au bureau"; updateSendHint();
   // l'IA donne déjà sa liste ; l'appli n'ajoute un manque que si l'IA ne l'a pas signalé (évite les doublons)
   const norm = (t) => String(t).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const ai = r.a_verifier.map(norm);
@@ -569,7 +584,7 @@ async function buildPdf(){
   y += 22; doc.setFont("helvetica", "bold"); doc.setFontSize(19); doc.setTextColor(...INK);
   const tl = doc.splitTextToSize(pdfSafe(r.titre).toUpperCase(), CW); doc.text(tl, M, y); y += tl.length * 7.5;
   doc.setDrawColor(...ACC); doc.setLineWidth(0.9); doc.line(M, y, W - M, y); y += 6;
-  const infos = [...INFO_KEYS.map(([k, l]) => [l, r.infos[k] || "—"]), ...Object.entries(r.champs).map(([k, v]) => [k, v || "À compléter"])];
+  const infos = [...INFO_KEYS.map(([k, l]) => [l.toUpperCase(), r.infos[k] || "À compléter"]), ...Object.entries(r.champs).map(([k, v]) => [k.toUpperCase(), v || "À compléter"])];
   const rows = []; for (let i = 0; i < infos.length; i += 2) rows.push([infos[i][0], infos[i][1], infos[i + 1]?.[0] || "", infos[i + 1]?.[1] || ""].map(pdfSafe));
   doc.autoTable({ startY: y, body: rows, theme: "plain", margin: { left: M, right: M }, styles: { fontSize: 9, cellPadding: 1.8, textColor: INK, fillColor: SOFT }, columnStyles: { 0: { fontStyle: "bold", textColor: MUTED, cellWidth: 32 }, 2: { fontStyle: "bold", textColor: MUTED, cellWidth: 32 } } });
   y = doc.lastAutoTable.finalY + 8;
@@ -611,20 +626,147 @@ $("pdfBtn").addEventListener("click", async () => {
   finally { $("pdfBtn").disabled = false; }
 });
 
-/* ---------- History (local) ---------- */
-$("saveBtn").addEventListener("click", () => {
+/* ---------- Word (.docx) — built by hand with JSZip, opens in Word / Pages / Google Docs ---------- */
+const DX = (() => {
+  const x = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "");
+  const run = (t, o = {}) => {
+    const pr = `<w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>${o.b ? "<w:b/>" : ""}${o.caps ? "<w:caps/>" : ""}${o.color ? `<w:color w:val="${o.color}"/>` : ""}<w:sz w:val="${o.sz || 21}"/></w:rPr>`;
+    return String(t ?? "").split("\n").map((line, i) => `<w:r>${pr}${i ? "<w:br/>" : ""}<w:t xml:space="preserve">${x(line)}</w:t></w:r>`).join("");
+  };
+  const para = (runs, o = {}) => `<w:p><w:pPr>${o.ind ? `<w:ind w:left="${o.ind}" w:hanging="240"/>` : ""}<w:spacing w:before="${o.before || 0}" w:after="${o.after ?? 120}"/>${o.border ? `<w:pBdr><w:bottom w:val="single" w:sz="18" w:space="4" w:color="2F5BDB"/></w:pBdr>` : ""}${o.align ? `<w:jc w:val="${o.align}"/>` : ""}</w:pPr>${runs}</w:p>`;
+  const cell = (content, w, fill) => `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${fill ? `<w:shd w:val="clear" w:color="auto" w:fill="${fill}"/>` : ""}<w:tcMar><w:top w:w="60" w:type="dxa"/><w:bottom w:w="60" w:type="dxa"/></w:tcMar></w:tcPr>${content}</w:tc>`;
+  const table = (rows, widths, headFill, lineColor) => {
+    const b = (n) => `<w:${n} w:val="single" w:sz="4" w:space="0" w:color="${lineColor || "D3D8E6"}"/>`;
+    return `<w:tbl><w:tblPr><w:tblW w:w="${widths.reduce((a, c) => a + c, 0)}" w:type="dxa"/><w:tblBorders>${b("top")}${b("left")}${b("bottom")}${b("right")}${b("insideH")}${b("insideV")}</w:tblBorders><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>${widths.map(w => `<w:gridCol w:w="${w}"/>`).join("")}</w:tblGrid>${rows.map((r, ri) => `<w:tr>${r.map((c, ci) => cell(para(c.runs, { after: 40 }), widths[ci], c.fill || (ri === 0 && headFill ? headFill : ""))).join("")}</w:tr>`).join("")}</w:tbl>${para("", { after: 120 })}`;
+  };
+  const plainTable = (cells, widths) => `<w:tbl><w:tblPr><w:tblW w:w="${widths.reduce((a, c) => a + c, 0)}" w:type="dxa"/><w:tblBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/><w:insideH w:val="nil"/><w:insideV w:val="nil"/></w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="0" w:type="dxa"/><w:right w:w="120" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${widths.map(w => `<w:gridCol w:w="${w}"/>`).join("")}</w:tblGrid>${cells.map(row => `<w:tr><w:trPr><w:cantSplit/></w:trPr>${row.map((c, i) => `<w:tc><w:tcPr><w:tcW w:w="${widths[i]}" w:type="dxa"/><w:vAlign w:val="${c.valign || "top"}"/></w:tcPr>${c.xml || "<w:p/>"}</w:tc>`).join("")}</w:tr>`).join("")}</w:tbl>`;
+  const image = (rid, id, cx, cy) => `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${id}" name="Image ${id}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${id}" name="image${id}.jpg"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
+  const EMU_IN = 914400, TEXT_W = 9638; // twips of usable width on A4 with 2 cm margins
+
+  /* data = {company, logo:{bytes,w,h}|null, num, titre, infos:[[label,value]], sections:[...], photos:[{bytes,w,h,caption}]} */
+  async function build(data){
+    const zip = new JSZip(); const rels = []; let body = ""; let imgN = 0;
+    const addImg = (bytes, w, h, maxIn) => { imgN++; const rid = "rIdImg" + imgN; zip.file(`word/media/image${imgN}.jpg`, bytes); rels.push(`<Relationship Id="${rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image${imgN}.jpg"/>`); const cx = Math.round(maxIn * EMU_IN), cy = Math.round(cx * h / w); return image(rid, imgN, cx, Math.min(cy, Math.round(4.2 * EMU_IN))); };
+    // header
+    const left = data.logo ? para(addImg(data.logo.bytes, data.logo.w, data.logo.h, Math.min(1.9, 0.55 * data.logo.w / data.logo.h)), { after: 0 }) : para(run(data.company, { b: true, caps: true, sz: 24, color: "101A3B" }), { after: 0 });
+    const right = para(run(`N° ${data.num}`, { sz: 18, color: "5B6488" }), { after: 20, align: "right" }) + para(run(`Émis le ${data.emis}`, { sz: 18, color: "5B6488" }), { after: 0, align: "right" });
+    body += plainTable([[{ xml: left, valign: "center" }, { xml: right, valign: "top" }]], [6038, 3600]);
+    body += para(run(data.titre, { b: true, caps: true, sz: 38, color: "101A3B" }), { before: 360, after: 120, border: true });
+    // infos table (label | value | label | value)
+    const rows = []; for (let i = 0; i < data.infos.length; i += 2) {
+      const a = data.infos[i], b = data.infos[i + 1] || ["", ""];
+      rows.push([{ runs: run(a[0], { b: true, sz: 16, color: "5B6488", caps: true }), fill: "E8EBF4" }, { runs: run(a[1], { sz: 20 }), fill: "E8EBF4" }, { runs: run(b[0], { b: true, sz: 16, color: "5B6488", caps: true }), fill: "E8EBF4" }, { runs: run(b[1], { sz: 20 }), fill: "E8EBF4" }]);
+    }
+    body += table(rows, [1700, 3119, 1700, 3119], "", "E8EBF4");
+    // sections
+    data.sections.forEach((s, i) => {
+      body += para(run(`${i + 1}.  `, { b: true, color: "2F5BDB", sz: 24 }) + run(s.titre, { b: true, caps: true, sz: 24, color: "101A3B" }), { before: 200, after: 100 });
+      if (s.format === "texte") body += para(run(s.texte || "Néant."));
+      else if (s.format === "liste") (s.items.length ? s.items : ["Néant."]).forEach(it => { body += para(run("•  " + it), { ind: 360, after: 60 }); });
+      else {
+        const n = s.colonnes.length, w = Math.floor(TEXT_W / n);
+        const tr = [s.colonnes.map(c => ({ runs: run(c, { b: true, caps: true, sz: 16, color: "5B6488" }) }))];
+        (s.lignes.length ? s.lignes : [s.colonnes.map((_, j) => j ? "" : "Néant.")]).forEach(row => tr.push(row.map(c => ({ runs: run(c, { sz: 20 }) }))));
+        body += table(tr, Array(n).fill(w), "E8EBF4");
+      }
+    });
+    // photos
+    if (data.photos.length) {
+      body += para(run(`${data.sections.length + 1}.  `, { b: true, color: "2F5BDB", sz: 24 }) + run("Photos", { b: true, caps: true, sz: 24, color: "101A3B" }), { before: 200, after: 100 });
+      const rowsP = [];
+      for (let i = 0; i < data.photos.length; i += 2) rowsP.push(data.photos.slice(i, i + 2).map(p => ({ xml: para(addImg(p.bytes, p.w, p.h, 3.25), { after: 40 }) + para(run(p.caption, { sz: 17 }), { after: 200 }) })));
+      rowsP.forEach(r => { if (r.length < 2) r.push({ xml: "<w:p/>" }); });
+      body += plainTable(rowsP, [4819, 4819]);
+    }
+
+    const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><w:body>${body}<w:sectPr><w:footerReference w:type="default" r:id="rIdFooter1"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="567" w:footer="567" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+    const fld = (code) => `<w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:color w:val="5B6488"/><w:sz w:val="16"/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:color w:val="5B6488"/><w:sz w:val="16"/></w:rPr><w:instrText xml:space="preserve"> ${code} </w:instrText></w:r><w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:color w:val="5B6488"/><w:sz w:val="16"/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:color w:val="5B6488"/><w:sz w:val="16"/></w:rPr><w:t>1</w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:color w:val="5B6488"/><w:sz w:val="16"/></w:rPr><w:fldChar w:fldCharType="end"/></w:r>`;
+    const footer = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:p><w:pPr><w:pBdr><w:top w:val="single" w:sz="4" w:space="6" w:color="D3D8E6"/></w:pBdr><w:tabs><w:tab w:val="right" w:pos="9638"/></w:tabs></w:pPr>${run(`${data.company} · ${data.chantier || ""}`, { sz: 16, color: "5B6488" })}<w:r><w:tab/></w:r>${run("Page ", { sz: 16, color: "5B6488" })}${fld("PAGE")}${run(" / ", { sz: 16, color: "5B6488" })}${fld("NUMPAGES")}</w:p></w:ftr>`;
+    zip.file("word/footer1.xml", footer);
+    rels.push(`<Relationship Id="rIdFooter1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>`);
+    zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpg" ContentType="image/jpeg"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/></Types>`);
+    zip.file("_rels/.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`);
+    zip.file("word/_rels/document.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels.join("")}</Relationships>`);
+    zip.file("word/document.xml", doc);
+    return zip.generateAsync({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+  }
+  return { build };
+})();
+
+async function buildWord(){
+  const r = S.report;
+  let logo = null;
+  if (S.logo) { try { const { im, u } = await loadImage(await (await fetch(S.logo)).blob()); URL.revokeObjectURL(u); logo = { bytes: await (await fetch(S.logo)).arrayBuffer(), w: im.naturalWidth, h: im.naturalHeight }; } catch {} }
+  const photos = [];
+  for (let i = 0; i < S.photos.length; i++) { const p = S.photos[i]; photos.push({ bytes: await p.blob.arrayBuffer(), w: p.w, h: p.h, caption: `Photo ${i + 1} — ${r.photos.find(x => x.n === i + 1)?.legende || p.caption || ""}` }); }
+  return DX.build({ company: S.company, logo, num: S.meta.num, titre: r.titre, emis: todayFR(), chantier: r.infos.chantier || "",
+    infos: [...INFO_KEYS.map(([k, l]) => [l, r.infos[k] || "À compléter"]), ...Object.entries(r.champs).map(([k, v]) => [k, v || "À compléter"])],
+    sections: r.sections, photos });
+}
+async function shareOrSave(blob, name, type){
+  const file = new File([blob], name, { type });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: name }); return; } catch (e) { if (e?.name === "AbortError") return; } }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+}
+$("wordBtn").addEventListener("click", async () => {
+  if (!window.JSZip) return toast("Le générateur Word n'a pas chargé (connexion ?).");
+  $("wordBtn").disabled = true;
+  try { await shareOrSave(await buildWord(), pdfName().replace(/\.pdf$/, ".docx"), "application/vnd.openxmlformats-officedocument.wordprocessingml.document"); }
+  catch { toast("Le fichier Word n'a pas pu être créé."); }
+  finally { $("wordBtn").disabled = false; }
+});
+
+/* ---------- Send to office (Make → e-mail) ---------- */
+function pdfName(){ const slug = (S.report.infos.chantier || "chantier").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40); return `${S.meta.num}_${slug}.pdf`; }
+function updateSendHint(){
+  const h = $("sendHint"); if (!h) return;
+  if (S.meta?.sentTo) h.textContent = `Déjà envoyé à ${S.meta.sentTo} le ${S.meta.sentAt}.`;
+  else if (S.admin && S.mailhook) h.textContent = `Le PDF et le Word partent directement à ${S.admin}${S.cc ? " (copie : " + S.cc + ")" : ""}.`;
+  else h.textContent = "Renseigne l'e-mail de l'admin et le webhook d'envoi dans Réglages pour activer l'envoi.";
+}
+function saveHistory(quiet){
   const h = store.get("bat.hist", []); const i = h.findIndex(x => x.meta.num === S.meta.num);
   const entry = { at: new Date().toISOString(), meta: S.meta, report: S.report, nbPhotos: S.photos.length };
   if (i >= 0) h[i] = entry; else h.unshift(entry);
-  toast(store.set("bat.hist", h.slice(0, 60)) ? "Rapport enregistré" : "Mémoire du téléphone pleine : supprime d'anciens rapports.");
+  const ok = store.set("bat.hist", h.slice(0, 60));
+  if (!quiet) toast(ok ? "Rapport enregistré" : "Mémoire du téléphone pleine : supprime d'anciens rapports.");
+}
+let sending = false;
+$("sendBtn").addEventListener("click", async () => {
+  if (sending || !S.report) return;
+  if (!S.admin || !S.mailhook) { toast("Ajoute l'e-mail de l'admin et le webhook d'envoi dans Réglages."); return showTab("reglages"); }
+  if (!window.jspdf) return toast("Le générateur PDF n'a pas chargé (connexion ?).");
+  if (S.meta.sentTo && $("sendBtn").dataset.confirm !== "1") { $("sendBtn").dataset.confirm = "1"; $("sendBtn").textContent = "Renvoyer quand même ?"; return; }
+  sending = true; const btn = $("sendBtn"); btn.disabled = true; btn.textContent = "Envoi en cours…";
+  try {
+    const doc = await buildPdf(); const name = pdfName();
+    const r = S.report, inf = r.infos;
+    const sujet = `Rapport d'intervention – ${inf.chantier || "Chantier"} – ${inf.date || ""}`.trim();
+    const corps = `Bonjour,\n\nVeuillez trouver ci-joint le rapport d'intervention ${S.meta.num}.\n\nChantier : ${inf.chantier || "—"}\nClient : ${inf.client || "—"}\nDate : ${inf.date || "—"}\nIntervenant(s) : ${inf.intervenant || "—"}\n\n— ${S.company} (envoyé avec Batiria)`;
+    const fd = new FormData();
+    fd.append("pdf", new File([doc.output("blob")], name, { type: "application/pdf" }), name);
+    if (window.JSZip) { const wname = name.replace(/\.pdf$/, ".docx"); fd.append("word", new File([await buildWord()], wname, { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }), wname); }
+    fd.append("destinataire", S.admin); fd.append("copie", S.cc || "");
+    fd.append("sujet", sujet); fd.append("message", corps); fd.append("texte", reportText());
+    fd.append("entreprise", S.company); fd.append("numero", S.meta.num); fd.append("cle", S.key || "");
+    const res = await fetch(S.mailhook, { method: "POST", body: fd });
+    if (!res.ok) throw { status: res.status };
+    const d = new Date(); S.meta.sentTo = S.admin; S.meta.sentAt = `${todayFR()} à ${pad(d.getHours())}h${pad(d.getMinutes())}`;
+    saveHistory(true); toast(`Rapport envoyé à ${S.admin}`);
+  } catch (e) {
+    toast(e?.status ? `L'envoi a échoué (erreur ${e.status}). Regarde l'historique du scénario d'envoi dans Make.` : "Impossible de joindre Make. Vérifie la connexion et le webhook d'envoi.");
+  } finally { sending = false; btn.disabled = false; btn.dataset.confirm = ""; btn.textContent = S.meta?.sentTo ? "Envoyé ✓ · renvoyer" : "Envoyer au bureau"; updateSendHint(); }
 });
+
+/* ---------- History (local) ---------- */
+$("saveBtn").addEventListener("click", () => saveHistory(false));
 let pendingDel = null;
 function renderHistory(){
   const h = store.get("bat.hist", []), box = $("histList"); box.innerHTML = "";
   if (!h.length) { box.innerHTML = `<div class="empty">Aucun rapport enregistré pour l'instant.</div>`; return; }
   h.forEach((v, idx) => {
     const it = document.createElement("div"); it.className = "item";
-    it.innerHTML = `<div class="l"><strong>${esc(v.report.infos?.chantier || "Chantier")}</strong><span><span class="mono">${esc(v.meta.num)}</span> · ${esc(v.report.infos?.date || "")} · ${esc(v.meta.modelNom)}</span></div><div class="r"><button type="button" class="btn small">Ouvrir</button><button type="button" class="btn ghost small">${pendingDel === v.meta.num ? "Confirmer" : "Supprimer"}</button></div>`;
+    it.innerHTML = `<div class="l"><strong>${esc(v.report.infos?.chantier || "Chantier")}</strong><span><span class="mono">${esc(v.meta.num)}</span> · ${esc(v.report.infos?.date || "")} · ${esc(v.meta.modelNom)}${v.meta.sentTo ? " · envoyé ✓" : ""}</span></div><div class="r"><button type="button" class="btn small">Ouvrir</button><button type="button" class="btn ghost small">${pendingDel === v.meta.num ? "Confirmer" : "Supprimer"}</button></div>`;
     const [o, d] = it.querySelectorAll("button");
     o.addEventListener("click", () => { S.meta = v.meta; S.report = v.report; S.photos = []; renderPhotos(); renderReport(); showTab("rapport"); $("captureBlock").hidden = true; $("resultBlock").hidden = false; if (v.nbPhotos) toast("Les photos ne sont pas gardées dans l'historique."); });
     d.addEventListener("click", () => { if (pendingDel !== v.meta.num) { pendingDel = v.meta.num; return renderHistory(); } pendingDel = null; const a = store.get("bat.hist", []); a.splice(idx, 1); store.set("bat.hist", a); renderHistory(); });
@@ -636,6 +778,11 @@ function renderHistory(){
 $("s-webhook").value = S.webhook; $("s-key").value = S.key; $("s-company").value = S.company;
 $("s-webhook").addEventListener("change", () => { S.webhook = $("s-webhook").value.trim(); store.set("bat.webhook", S.webhook); toast("Adresse enregistrée"); });
 $("s-key").addEventListener("change", () => { S.key = $("s-key").value; store.set("bat.key", S.key); toast("Code enregistré"); });
+const isMail = (m) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m);
+$("s-admin").value = S.admin; $("s-cc").value = S.cc; $("s-mailhook").value = S.mailhook;
+$("s-admin").addEventListener("change", () => { const v = $("s-admin").value.trim(); if (v && !isMail(v)) return toast("Cette adresse e-mail n'est pas valide."); S.admin = v; store.set("bat.admin", v); toast("E-mail de l'admin enregistré"); updateSendHint(); });
+$("s-cc").addEventListener("change", () => { const v = $("s-cc").value.trim(); if (v && !isMail(v)) return toast("Cette adresse e-mail n'est pas valide."); S.cc = v; store.set("bat.cc", v); toast("Copie enregistrée"); });
+$("s-mailhook").addEventListener("change", () => { S.mailhook = $("s-mailhook").value.trim(); store.set("bat.mailhook", S.mailhook); toast("Webhook d'envoi enregistré"); updateSendHint(); });
 $("s-company").addEventListener("input", () => { S.company = $("s-company").value || "Mon entreprise"; store.set("bat.company", S.company); $("companyLabel").textContent = S.company; });
 function renderCompany(){ $("companyLabel").textContent = S.company; $("logoRow").hidden = !S.logo; if (S.logo) $("logoPreview").src = S.logo; }
 $("s-logo").addEventListener("change", async (e) => {
