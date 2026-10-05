@@ -133,6 +133,15 @@ details summary{cursor:pointer;font:500 12px var(--mono);letter-spacing:1px;text
 .item .r{display:flex;gap:6px;flex-shrink:0}
 .empty{color:var(--muted);font-size:14px}
 .mono{font-family:var(--mono);font-size:13px}
+.logo-drop{position:relative;display:block;border:1px dashed #3B4885;background:var(--sunk);min-height:132px;cursor:pointer}
+.logo-drop:focus-within{outline:2px solid var(--accent-text);outline-offset:2px}
+.logo-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.logo-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:132px;padding:16px;text-align:center;color:var(--muted)}
+.logo-empty b{font:700 13px var(--display);letter-spacing:1px;text-transform:uppercase;color:var(--ink)}
+.logo-empty span{font-size:13px}
+.logo-sheet{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:132px;padding:18px;background:#F5F6FA}
+.logo-sheet img{max-height:64px;max-width:220px;display:block}
+.logo-sheet small{font:500 10px var(--mono);letter-spacing:1px;text-transform:uppercase;color:#5B6488}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#fff;color:#101A3B;padding:10px 16px;border-radius:2px;font-size:14px;font-weight:500;z-index:50;max-width:calc(100% - 32px)}
 </style>
 </head>
@@ -238,8 +247,17 @@ details summary{cursor:pointer;font:500 12px var(--mono);letter-spacing:1px;text
     <div class="panel">
       <h2>Mon entreprise</h2>
       <label class="f">Nom sur les rapports<input type="text" id="s-company"></label>
-      <label class="f">Logo (PNG ou JPG)<input type="file" id="s-logo" accept="image/png,image/jpeg"></label>
-      <div class="row" id="logoRow" hidden><img id="logoPreview" alt="Logo" style="max-height:44px;max-width:180px"><button type="button" class="btn ghost small" id="logoRemove">Retirer</button></div>
+      <div class="f" style="gap:8px">Logo de la société (sur le PDF et le Word)</div>
+      <label class="logo-drop" id="logoDrop">
+        <input type="file" id="s-logo" accept="image/*" aria-label="Choisir le logo de la société">
+        <span class="logo-empty" id="logoEmpty">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>
+          <b>Ajouter le logo</b>
+          <span>Touche ici et choisis l'image (PNG ou JPG)</span>
+        </span>
+        <span class="logo-sheet" id="logoRow" hidden><img id="logoPreview" alt="Aperçu du logo sur le rapport"><small>Aperçu sur le rapport · touche pour changer</small></span>
+      </label>
+      <button type="button" class="btn ghost small" id="logoRemove" hidden>Retirer le logo</button>
     </div>
     <div class="panel">
       <div class="row"><h2>Modèles clients</h2><button type="button" class="btn dark small" id="newModel">Nouveau</button></div>
@@ -784,13 +802,20 @@ $("s-admin").addEventListener("change", () => { const v = $("s-admin").value.tri
 $("s-cc").addEventListener("change", () => { const v = $("s-cc").value.trim(); if (v && !isMail(v)) return toast("Cette adresse e-mail n'est pas valide."); S.cc = v; store.set("bat.cc", v); toast("Copie enregistrée"); });
 $("s-mailhook").addEventListener("change", () => { S.mailhook = $("s-mailhook").value.trim(); store.set("bat.mailhook", S.mailhook); toast("Webhook d'envoi enregistré"); updateSendHint(); });
 $("s-company").addEventListener("input", () => { S.company = $("s-company").value || "Mon entreprise"; store.set("bat.company", S.company); $("companyLabel").textContent = S.company; });
-function renderCompany(){ $("companyLabel").textContent = S.company; $("logoRow").hidden = !S.logo; if (S.logo) $("logoPreview").src = S.logo; }
+function renderCompany(){ $("companyLabel").textContent = S.company; $("logoRow").hidden = !S.logo; $("logoEmpty").hidden = !!S.logo; $("logoRemove").hidden = !S.logo; if (S.logo) $("logoPreview").src = S.logo; }
 $("s-logo").addEventListener("change", async (e) => {
-  const f = e.target.files?.[0]; if (!f) return;
-  try { const { im, u } = await loadImage(f); const r = Math.min(1, 400 / im.naturalWidth); const c = document.createElement("canvas"); c.width = Math.round(im.naturalWidth * r); c.height = Math.round(im.naturalHeight * r); const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u); S.logo = c.toDataURL("image/jpeg", 0.9); store.set("bat.logo", S.logo); renderCompany(); toast("Logo ajouté"); }
-  catch { toast("Ce logo n'a pas pu être lu."); }
+  const f = e.target.files?.[0]; e.target.value = ""; if (!f) return;
+  try {
+    const { im, u } = await loadImage(f); const r = Math.min(1, 800 / im.naturalWidth, 400 / im.naturalHeight);
+    const c = document.createElement("canvas"); c.width = Math.round(im.naturalWidth * r); c.height = Math.round(im.naturalHeight * r);
+    const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
+    S.logo = c.toDataURL("image/jpeg", 0.92);
+    if (!store.set("bat.logo", S.logo)) toast("Logo ajouté pour cette session, mais la mémoire du téléphone est pleine : il ne sera pas gardé.");
+    else toast("Logo ajouté : il apparaîtra sur le PDF et le Word");
+    renderCompany(); if (S.report) renderReport();
+  } catch { toast("Ce logo n'a pas pu être lu. Essaie un PNG ou un JPG."); }
 });
-$("logoRemove").addEventListener("click", () => { S.logo = null; store.set("bat.logo", null); renderCompany(); });
+$("logoRemove").addEventListener("click", () => { S.logo = null; store.set("bat.logo", null); renderCompany(); if (S.report) renderReport(); toast("Logo retiré"); });
 
 let editing = null;
 function renderModelList(){
