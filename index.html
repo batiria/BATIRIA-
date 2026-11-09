@@ -7,14 +7,15 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Batiria">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" sizes="192x192" href="../icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Batiria</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
 <style>
 /* Batiria — identité du site : bleu nuit, bleu vif, capitales grasses, étiquettes mono, cadres droits */
 :root{
@@ -50,7 +51,7 @@ section.view{display:flex;flex-direction:column;gap:16px;padding-top:16px}
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 @media (max-width:520px){.grid2{grid-template-columns:minmax(0,1fr)}}
 label.f{display:flex;flex-direction:column;gap:6px;font:500 11px var(--mono);letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)}
-input[type=text],input[type=url],input[type=password],select,textarea{font:400 16px var(--body);color:var(--ink);background:var(--sunk);border:1px solid var(--line);border-radius:2px;padding:10px 12px;min-height:46px;width:100%;letter-spacing:0;text-transform:none}
+input[type=text],input[type=url],input[type=password],input[type=email],select,textarea{font:400 16px var(--body);color:var(--ink);background:var(--sunk);border:1px solid var(--line);border-radius:2px;padding:10px 12px;min-height:46px;width:100%;letter-spacing:0;text-transform:none}
 select{appearance:auto}
 textarea{resize:vertical}
 input::placeholder,textarea::placeholder{color:#6F79A0}
@@ -143,26 +144,92 @@ details summary{cursor:pointer;font:500 12px var(--mono);letter-spacing:1px;text
 .logo-sheet img{max-height:64px;max-width:220px;display:block}
 .logo-sheet small{font:500 10px var(--mono);letter-spacing:1px;text-transform:uppercase;color:#5B6488}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#fff;color:#101A3B;padding:10px 16px;border-radius:2px;font-size:14px;font-weight:500;z-index:50;max-width:calc(100% - 32px)}
+
+nav.tabs{overflow-x:auto;scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
+.testbar{background:var(--warn);color:#1B1B1B;font:600 11px var(--mono);letter-spacing:1.2px;text-transform:uppercase;text-align:center;padding:6px 16px}
+.auth{max-width:440px;margin:6vh auto 0;display:flex;flex-direction:column;gap:16px}
+.auth h1{font-family:var(--display);font-weight:800;font-size:30px;line-height:1.05;text-transform:uppercase;margin:0}
+.auth p{margin:0;color:var(--muted)}
+.code-in{font:600 28px var(--mono)!important;letter-spacing:10px;text-align:center}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:40px;padding:8px 12px;border:1px solid var(--line);background:var(--sunk);color:var(--muted);font:500 13px var(--body);cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--ink)}
+.chip[aria-pressed="true"]::before{content:"✓ ";color:var(--accent-text)}
+.banner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px;border:1px solid var(--accent);background:var(--accent-soft);font-size:14px}
+.item select{min-height:38px;max-width:190px;background:var(--sunk);color:var(--ink);border:1px solid var(--line);font:500 13px var(--body);padding:0 8px}
+.mono{font-family:var(--mono)}
 </style>
 </head>
 <body>
+<div class="testbar">Version test · comptes et chantiers</div>
 <header class="top"><div class="in">
   <div class="brand"><i aria-hidden="true"></i>Batiria</div>
   <div class="company" id="companyLabel"></div>
 </div></header>
-<div class="wrap">
+<div class="wrap" id="authView">
+  <div class="auth">
+    <div class="tag"><b>→</b>Connexion</div>
+    <div class="panel" id="a-email">
+      <h1>Bienvenue sur ton espace</h1>
+      <p>Entre ton adresse e-mail : on t'envoie un code à 6 chiffres. Pas de mot de passe à retenir.</p>
+      <label class="f">Ton e-mail<input type="email" id="a-mail" autocomplete="email" inputmode="email" placeholder="prenom@entreprise.fr"></label>
+      <button type="button" class="btn primary" id="a-send">Recevoir mon code</button>
+    </div>
+    <div class="panel" id="a-code" hidden>
+      <h1>Regarde tes e-mails</h1>
+      <p>Mail envoyé à <strong id="a-mailShown"></strong> (regarde aussi les spams).</p><p><strong>Si le mail contient un lien</strong> : clique dessus, sur ce même appareil, tu seras connecté directement. <strong>S'il contient un code</strong> : tape-le ici.</p>
+      <label class="f">Code reçu<input type="text" id="a-token" class="code-in" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="••••••"></label>
+      <button type="button" class="btn primary" id="a-verify">Se connecter</button>
+      <button type="button" class="btn ghost small" id="a-back">Changer d'adresse ou renvoyer un code</button>
+    </div>
+    <div class="panel" id="a-wait" hidden>
+      <h1>Accès en attente</h1>
+      <p>Tu es bien connecté avec <strong id="a-waitMail"></strong>, mais aucune entreprise ne t'a encore ajouté. Demande à ton responsable de t'inviter avec cette adresse, puis reconnecte-toi.</p>
+      <button type="button" class="btn" data-logout>Se déconnecter</button>
+    </div>
+    <div class="panel" id="a-off" hidden>
+      <h1>Petit souci</h1>
+      <p id="a-offTxt"></p>
+      <button type="button" class="btn" id="a-retry">Réessayer</button>
+    </div>
+    <div class="alert err" id="a-msg" hidden></div>
+  </div>
+</div>
+<div class="wrap" id="appView" hidden>
   <div class="panel" id="installBox" hidden style="margin-bottom:12px;flex-direction:row;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px">
     <span id="installText" style="font-size:14px">Installe Batiria sur ton téléphone pour l'ouvrir comme une appli.</span>
     <button type="button" class="btn dark small" id="installBtn">Installer</button>
   </div>
   <nav class="tabs" role="tablist" aria-label="Sections">
-    <button type="button" role="tab" id="tab-rapport" aria-selected="true">Rapport</button>
+    <button type="button" role="tab" id="tab-chantiers" aria-selected="true">Chantiers</button>
+    <button type="button" role="tab" id="tab-rapport" aria-selected="false">Rapport</button>
     <button type="button" role="tab" id="tab-historique" aria-selected="false">Historique</button>
+    <button type="button" role="tab" id="tab-equipe" aria-selected="false" hidden>Équipe</button>
     <button type="button" role="tab" id="tab-reglages" aria-selected="false">Réglages</button>
   </nav>
 
+  <!-- CHANTIERS -->
+  <section class="view" id="view-chantiers">
+    <div class="panel">
+      <div class="row"><h2>Mes chantiers</h2><span class="pill" id="chCount"></span></div>
+      <div class="list" id="chList"><div class="empty">Chargement…</div></div>
+    </div>
+    <div class="panel" id="chDetail" hidden></div>
+    <div class="panel" id="chNew" hidden>
+      <div class="tag"><b>+</b>Nouveau chantier</div>
+      <label class="f">Nom du chantier<input type="text" id="ch-nom" placeholder="Ex. Résidence Les Tilleuls"></label>
+      <div class="grid2"><label class="f">Ville<input type="text" id="ch-ville"></label><label class="f">Client<input type="text" id="ch-client"></label></div>
+      <label class="f">Adresse<input type="text" id="ch-adresse"></label>
+      <button type="button" class="btn primary" id="ch-create">Créer le chantier</button>
+      <div class="hint">Tu es affecté automatiquement au chantier que tu crées.</div>
+    </div>
+  </section>
+
   <!-- RAPPORT -->
-  <section class="view" id="view-rapport">
+  <section class="view" id="view-rapport" hidden>
+    <div class="banner" id="chBanner" hidden></div>
     <div class="alert err" id="setupAlert" hidden>L'appli n'est pas encore reliée à Make. Va dans <strong>Réglages</strong> et colle l'adresse de ton webhook.</div>
 
     <div id="captureBlock" style="display:flex;flex-direction:column;gap:16px">
@@ -228,8 +295,33 @@ details summary{cursor:pointer;font:500 12px var(--mono);letter-spacing:1px;text
     </div>
   </section>
 
+  <!-- EQUIPE -->
+  <section class="view" id="view-equipe" hidden>
+    <div class="panel">
+      <h2>Mon équipe</h2>
+      <div class="list" id="eqList"></div>
+      <div class="hint">Un compte désactivé ne voit plus rien, immédiatement.</div>
+    </div>
+    <div class="panel">
+      <div class="tag"><b>+</b>Ajouter une personne</div>
+      <div class="grid2"><label class="f">Nom<input type="text" id="eq-nom" placeholder="Prénom Nom"></label><label class="f">E-mail<input type="email" id="eq-mail" inputmode="email" placeholder="prenom@entreprise.fr"></label></div>
+      <label class="f">Rôle<select id="eq-role"><option value="chef">Chef d'équipe</option><option value="conducteur">Conducteur / chargé d'affaires</option><option value="compagnon">Compagnon</option><option value="admin">Admin</option></select></label>
+      <button type="button" class="btn primary" id="eq-invite">Ajouter</button>
+      <div class="hint">La personne ouvre l'appli, entre cet e-mail et reçoit son code. Elle arrive directement dans ton entreprise.</div>
+    </div>
+    <div class="panel">
+      <div class="tag"><b>…</b>Invitations en attente</div>
+      <div class="list" id="eqInv"></div>
+    </div>
+  </section>
+
   <!-- REGLAGES -->
   <section class="view" id="view-reglages" hidden>
+    <div class="panel">
+      <h2>Mon compte</h2>
+      <div class="list" id="compteInfo"></div>
+      <button type="button" class="btn" data-logout>Se déconnecter</button>
+    </div>
     <div class="panel">
       <h2>Connexion à Make</h2>
       <label class="f">Adresse du webhook<input type="url" id="s-webhook" placeholder="https://hook.eu2.make.com/…" autocomplete="off"></label>
@@ -328,9 +420,13 @@ const S = {
 };
 
 /* ---------- Tabs ---------- */
-["rapport", "historique", "reglages"].forEach(t => $("tab-" + t).addEventListener("click", () => showTab(t)));
+const TABS = ["chantiers", "rapport", "historique", "equipe", "reglages"];
+TABS.forEach(t => $("tab-" + t).addEventListener("click", () => showTab(t)));
 function showTab(name){
-  ["rapport", "historique", "reglages"].forEach(t => { $("tab-" + t).setAttribute("aria-selected", String(t === name)); $("view-" + t).hidden = t !== name; });
+  TABS.forEach(t => { $("tab-" + t).setAttribute("aria-selected", String(t === name)); $("view-" + t).hidden = t !== name; });
+  if (name === "chantiers" && ME.membre) chargerChantiers();
+  if (name === "equipe" && ME.membre) chargerEquipe();
+  if (name === "rapport") renderBanner();
   if (name === "historique") renderHistory();
   if (name === "reglages") renderModelList();
   if (name === "rapport") $("setupAlert").hidden = !!S.webhook;
@@ -489,7 +585,7 @@ $("generate").addEventListener("click", async () => {
   if (!S.webhook) return fail("Ajoute d'abord l'adresse du webhook Make dans Réglages.");
   if (rec && rec.state === "recording") stopRec();
   if (!S.audio) return fail("Enregistre d'abord ton vocal (gros bouton micro).");
-  const choice = S.modelId, extra = $("f-extra").value.trim();
+  const choice = S.modelId, extra = [chantierContexte(), $("f-extra").value.trim()].filter(Boolean).join("\n");
   const fd = new FormData();
   fd.append("audio", S.audio, `dictee.${S.audioExt}`);
   fd.append("prompt", buildPrompt(choice, extra, S.photos.map(p => p.caption.trim())));
@@ -505,7 +601,8 @@ $("generate").addEventListener("click", async () => {
     const r = parseReply(txt);
     const model = choice === "auto" ? modelById(String(r?.modele_id || "moe")) : modelById(choice);
     S.report = normalize(r, model);
-    S.meta = { modelId: model.id, modelNom: model.nom, num: "RI-" + new Date().toISOString().slice(0, 10).replace(/-/g, "") + "-" + Math.floor(100 + Math.random() * 900) };
+    remplirDepuisChantier();
+    S.meta = { chantier: S.chantier ? { id: S.chantier.id, nom: S.chantier.nom, ville: S.chantier.ville, adresse: S.chantier.adresse, client: S.chantier.client } : null, modelId: model.id, modelNom: model.nom, num: "RI-" + new Date().toISOString().slice(0, 10).replace(/-/g, "") + "-" + Math.floor(100 + Math.random() * 900) };
     renderReport(); $("captureBlock").hidden = true; $("resultBlock").hidden = false; window.scrollTo(0, 0);
   } catch (e) {
     if (e?.name === "AbortError") {}
@@ -747,7 +844,8 @@ function saveHistory(quiet){
   const entry = { at: new Date().toISOString(), meta: S.meta, report: S.report, nbPhotos: S.photos.length };
   if (i >= 0) h[i] = entry; else h.unshift(entry);
   const ok = store.set("bat.hist", h.slice(0, 60));
-  if (!quiet) toast(ok ? "Rapport enregistré" : "Mémoire du téléphone pleine : supprime d'anciens rapports.");
+  if (S.chantier) sauverEnLigne(quiet || !ok);
+  if (!quiet) toast(ok ? (S.chantier ? "Rapport enregistré" : "Rapport enregistré sur ce téléphone") : "Mémoire du téléphone pleine : supprime d'anciens rapports.");
 }
 let sending = false;
 $("sendBtn").addEventListener("click", async () => {
@@ -786,7 +884,7 @@ function renderHistory(){
     const it = document.createElement("div"); it.className = "item";
     it.innerHTML = `<div class="l"><strong>${esc(v.report.infos?.chantier || "Chantier")}</strong><span><span class="mono">${esc(v.meta.num)}</span> · ${esc(v.report.infos?.date || "")} · ${esc(v.meta.modelNom)}${v.meta.sentTo ? " · envoyé ✓" : ""}</span></div><div class="r"><button type="button" class="btn small">Ouvrir</button><button type="button" class="btn ghost small">${pendingDel === v.meta.num ? "Confirmer" : "Supprimer"}</button></div>`;
     const [o, d] = it.querySelectorAll("button");
-    o.addEventListener("click", () => { S.meta = v.meta; S.report = v.report; S.photos = []; renderPhotos(); renderReport(); showTab("rapport"); $("captureBlock").hidden = true; $("resultBlock").hidden = false; if (v.nbPhotos) toast("Les photos ne sont pas gardées dans l'historique."); });
+    o.addEventListener("click", () => { S.meta = v.meta; S.report = v.report; S.chantier = v.meta.chantier || null; S.photos = []; renderPhotos(); renderReport(); showTab("rapport"); $("captureBlock").hidden = true; $("resultBlock").hidden = false; if (v.nbPhotos) toast("Les photos ne sont pas gardées dans l'historique."); });
     d.addEventListener("click", () => { if (pendingDel !== v.meta.num) { pendingDel = v.meta.num; return renderHistory(); } pendingDel = null; const a = store.get("bat.hist", []); a.splice(idx, 1); store.set("bat.hist", a); renderHistory(); });
     box.appendChild(it);
   });
@@ -801,8 +899,8 @@ $("s-admin").value = S.admin; $("s-cc").value = S.cc; $("s-mailhook").value = S.
 $("s-admin").addEventListener("change", () => { const v = $("s-admin").value.trim(); if (v && !isMail(v)) return toast("Cette adresse e-mail n'est pas valide."); S.admin = v; store.set("bat.admin", v); toast("E-mail de l'admin enregistré"); updateSendHint(); });
 $("s-cc").addEventListener("change", () => { const v = $("s-cc").value.trim(); if (v && !isMail(v)) return toast("Cette adresse e-mail n'est pas valide."); S.cc = v; store.set("bat.cc", v); toast("Copie enregistrée"); });
 $("s-mailhook").addEventListener("change", () => { S.mailhook = $("s-mailhook").value.trim(); store.set("bat.mailhook", S.mailhook); toast("Webhook d'envoi enregistré"); updateSendHint(); });
-$("s-company").addEventListener("input", () => { S.company = $("s-company").value || "Mon entreprise"; store.set("bat.company", S.company); $("companyLabel").textContent = S.company; });
-function renderCompany(){ $("companyLabel").textContent = S.company; $("logoRow").hidden = !S.logo; $("logoEmpty").hidden = !!S.logo; $("logoRemove").hidden = !S.logo; if (S.logo) $("logoPreview").src = S.logo; }
+$("s-company").addEventListener("input", () => { S.company = $("s-company").value || "Mon entreprise"; store.set("bat.company", S.company); });
+function renderCompany(){ $("logoRow").hidden = !S.logo; $("logoEmpty").hidden = !!S.logo; $("logoRemove").hidden = !S.logo; if (S.logo) $("logoPreview").src = S.logo; }
 $("s-logo").addEventListener("change", async (e) => {
   const f = e.target.files?.[0]; e.target.value = ""; if (!f) return;
   try {
@@ -849,7 +947,7 @@ $("deleteModel").addEventListener("click", () => {
 });
 
 /* ---------- Install (PWA) ---------- */
-if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+/* Version test : pas de service worker, pour ne pas toucher à l'appli en production. */
 const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
 let deferredPrompt = null;
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredPrompt = e; if (!standalone) $("installBox").hidden = false; });
@@ -864,7 +962,261 @@ if (!standalone && /iphone|ipad|ipod/i.test(navigator.userAgent)) {
 }
 
 /* ---------- Init ---------- */
+/* ---------- Comptes, entreprises et chantiers (Supabase) ---------- */
+const SB_URL = "https://qbrargbswmsetzllnvow.supabase.co";
+const SB_KEY = "sb_publishable_A1oglRzOaECG2O37X4gqwA_3fYrBEHc";
+const sb = window.supabase ? window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "implicit", storageKey: "bat.sb" } }) : null;
+const ROLES = { admin: "Admin", conducteur: "Conducteur / chargé d'affaires", chef: "Chef d'équipe", compagnon: "Compagnon" };
+const ME = { user: null, membre: null, entreprise: null };
+const C = { chantiers: [], membres: [], affectations: [], invitations: [], ouvert: null, rapports: [], confirm: null };
+S.chantier = null;
+const peut = {
+  creer: () => ["admin", "conducteur"].includes(ME.membre?.role),
+  rapport: () => ["admin", "conducteur", "chef"].includes(ME.membre?.role),
+  admin: () => ME.membre?.role === "admin"
+};
+function gere(ch){
+  if (!ME.membre || !ch) return false;
+  if (ME.membre.role === "admin") return true;
+  return ME.membre.role === "conducteur" && C.affectations.some(a => a.chantier_id === ch.id && a.user_id === ME.user.id);
+}
+const nomDe = (uid) => { const m = C.membres.find(x => x.user_id === uid); return m ? (m.nom || m.email) : "—"; };
+function isoDate(fr){ const m = String(fr || "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/); return m ? `${m[3]}-${m[2]}-${m[1]}` : new Date().toISOString().slice(0, 10); }
+function frDate(iso){ const m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}/${m[1]}` : ""; }
+
+/* --- Connexion par code --- */
+let authEmail = "";
+function authMsg(m){ $("a-msg").textContent = m; $("a-msg").hidden = !m; }
+function authStep(step){ ["a-email", "a-code", "a-wait", "a-off"].forEach(id => $(id).hidden = id !== step); authMsg(""); }
+function showAuth(step){ $("authView").hidden = false; $("appView").hidden = true; authStep(step); }
+$("a-send").addEventListener("click", async () => {
+  const email = $("a-mail").value.trim().toLowerCase();
+  if (!isMail(email)) return authMsg("Cette adresse e-mail n'est pas valide.");
+  const b = $("a-send"); b.disabled = true; b.textContent = "Envoi…";
+  try {
+    const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: location.origin + location.pathname } });
+    if (error) return authMsg(/rate|limit|second|too many/i.test(error.message) ? "Trop de demandes de code. Attends une minute puis réessaie." : "Envoi du code impossible : " + error.message);
+    authEmail = email; $("a-mailShown").textContent = email; authStep("a-code"); $("a-token").value = ""; $("a-token").focus();
+  } finally { b.disabled = false; b.textContent = "Recevoir mon code"; }
+});
+$("a-mail").addEventListener("keydown", (e) => { if (e.key === "Enter") $("a-send").click(); });
+$("a-verify").addEventListener("click", async () => {
+  const token = $("a-token").value.replace(/\D/g, "");
+  if (token.length < 6) return authMsg("Entre le code reçu par e-mail (6 chiffres).");
+  const b = $("a-verify"); b.disabled = true; b.textContent = "Vérification…";
+  try {
+    const { error } = await sb.auth.verifyOtp({ email: authEmail, token, type: "email" });
+    if (error) return authMsg("Code incorrect ou expiré. Redemande un code.");
+    await chargerSession();
+  } finally { b.disabled = false; b.textContent = "Se connecter"; }
+});
+$("a-token").addEventListener("keydown", (e) => { if (e.key === "Enter") $("a-verify").click(); });
+$("a-back").addEventListener("click", () => authStep("a-email"));
+$("a-retry").addEventListener("click", () => location.reload());
+document.querySelectorAll("[data-logout]").forEach(b => b.addEventListener("click", async () => {
+  try { await sb.auth.signOut(); } catch {}
+  ME.user = ME.membre = ME.entreprise = null; S.chantier = null; showAuth("a-email");
+}));
+
+async function chargerSession(){
+  if (!sb) { showAuth("a-off"); $("a-offTxt").textContent = "Le module de connexion n'a pas pu se charger. Vérifie ta connexion internet, puis réessaie."; return; }
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return showAuth("a-email");
+  ME.user = session.user;
+  const { data, error } = await sb.from("membres").select("user_id, role, nom, email, entreprise_id, entreprises(nom, actif)").eq("user_id", ME.user.id).maybeSingle();
+  if (error) { showAuth("a-off"); $("a-offTxt").textContent = "Impossible de charger ton compte : " + error.message; return; }
+  if (!data || !data.entreprises) { showAuth("a-wait"); $("a-waitMail").textContent = ME.user.email; return; }
+  ME.membre = data; ME.entreprise = data.entreprises;
+  $("authView").hidden = true; $("appView").hidden = false;
+  if (S.company === "Mon entreprise") { S.company = ME.entreprise.nom; store.set("bat.company", S.company); $("s-company").value = S.company; }
+  $("companyLabel").textContent = `${ME.entreprise.nom} · ${ROLES[data.role]}`;
+  $("tab-equipe").hidden = !peut.admin();
+  $("tab-rapport").hidden = !peut.rapport();
+  $("chNew").hidden = !peut.creer();
+  renderCompte();
+  showTab("chantiers");
+}
+if (sb) sb.auth.onAuthStateChange((evt) => { if (evt === "SIGNED_OUT") showAuth("a-email"); });
+
+function renderCompte(){
+  const box = $("compteInfo"); if (!box || !ME.membre) return;
+  box.innerHTML = [["E-mail", ME.user.email], ["Entreprise", ME.entreprise.nom], ["Rôle", ROLES[ME.membre.role]]]
+    .map(([k, v]) => `<div class="item"><div class="l"><span>${esc(k)}</span><strong>${esc(v)}</strong></div></div>`).join("");
+}
+
+/* --- Chantiers --- */
+async function chargerChantiers(){
+  const [ch, mb, af] = await Promise.all([
+    sb.from("chantiers").select("*").order("created_at", { ascending: false }),
+    sb.from("membres").select("user_id, nom, email, role, actif").order("nom"),
+    sb.from("affectations").select("chantier_id, user_id")
+  ]);
+  const err = ch.error || mb.error || af.error;
+  if (err) toast("Chargement incomplet : " + err.message);
+  C.chantiers = ch.data || []; C.membres = mb.data || []; C.affectations = af.data || [];
+  if (C.ouvert && !C.chantiers.some(c => c.id === C.ouvert)) C.ouvert = null;
+  renderChantiers();
+}
+function renderChantiers(){
+  const box = $("chList");
+  $("chCount").textContent = C.chantiers.length + (C.chantiers.length > 1 ? " chantiers" : " chantier");
+  if (!C.chantiers.length) box.innerHTML = `<div class="empty">${peut.creer() ? "Aucun chantier pour l'instant. Crée le premier ci-dessous." : "Aucun chantier pour toi. Ton conducteur de travaux doit t'affecter à un chantier."}</div>`;
+  else box.innerHTML = C.chantiers.map(c => {
+    const n = C.affectations.filter(a => a.chantier_id === c.id).length;
+    return `<div class="item"><div class="l"><strong>${esc(c.nom)}</strong><span>${esc([c.ville, c.client, n + (n > 1 ? " personnes" : " personne")].filter(Boolean).join(" · "))}</span></div><div class="r"><button type="button" class="btn small" data-act="ouvrir" data-id="${c.id}">Ouvrir</button>${peut.rapport() ? `<button type="button" class="btn ghost small" data-act="rapport" data-id="${c.id}">Rapport</button>` : ""}</div></div>`;
+  }).join("");
+  renderDetail();
+}
+async function renderDetail(){
+  const box = $("chDetail"), c = C.chantiers.find(x => x.id === C.ouvert);
+  if (!c) { box.hidden = true; box.innerHTML = ""; return; }
+  const g = gere(c), aff = new Set(C.affectations.filter(a => a.chantier_id === c.id).map(a => a.user_id));
+  let h = `<div class="row"><div class="tag"><b>→</b>Dossier chantier</div><button type="button" class="btn ghost small" data-act="fermer">Fermer</button></div><h2>${esc(c.nom)}</h2>`;
+  if (g) h += `<div class="grid2"><label class="f">Nom<input type="text" id="cd-nom" value="${esc(c.nom)}"></label><label class="f">Client<input type="text" id="cd-client" value="${esc(c.client || "")}"></label></div><div class="grid2"><label class="f">Adresse<input type="text" id="cd-adresse" value="${esc(c.adresse || "")}"></label><label class="f">Ville<input type="text" id="cd-ville" value="${esc(c.ville || "")}"></label></div><button type="button" class="btn small" data-act="maj" data-id="${c.id}">Enregistrer les infos</button>`;
+  else h += `<div class="list">${[["Adresse", [c.adresse, c.ville].filter(Boolean).join(", ")], ["Client", c.client]].filter(x => x[1]).map(([k, v]) => `<div class="item"><div class="l"><span>${esc(k)}</span><strong>${esc(v)}</strong></div></div>`).join("") || `<div class="empty">Pas d'informations complémentaires.</div>`}</div>`;
+  h += `<div class="tag" style="margin-top:6px"><b>01</b>Personnes affectées</div>`;
+  const actifs = C.membres.filter(m => m.actif);
+  if (g) h += `<div class="chips">${actifs.map(m => `<button type="button" class="chip" data-act="aff" data-id="${c.id}" data-u="${m.user_id}" aria-pressed="${aff.has(m.user_id)}">${esc(m.nom || m.email)} · ${esc(ROLES[m.role].split(" ")[0])}</button>`).join("")}</div><div class="hint">Touche une personne pour l'affecter ou la retirer. Elle ne voit que les chantiers où elle est affectée.</div>`;
+  else h += `<div class="hint">${esc(actifs.filter(m => aff.has(m.user_id)).map(m => m.nom || m.email).join(", ") || "Personne")}</div>`;
+  h += `<div class="tag" style="margin-top:6px"><b>02</b>Rapports du chantier</div><div class="list" id="cdRapports"><div class="empty">Chargement…</div></div>`;
+  const btns = [];
+  if (peut.rapport()) btns.push(`<button type="button" class="btn primary" data-act="rapport" data-id="${c.id}">Faire un rapport vocal</button>`);
+  if (peut.admin()) btns.push(`<button type="button" class="btn ghost" data-act="suppr" data-id="${c.id}">${C.confirm === "ch:" + c.id ? "Confirmer la suppression" : "Supprimer le chantier"}</button>`);
+  if (btns.length) h += `<div class="btns">${btns.join("")}</div>`;
+  box.innerHTML = h; box.hidden = false;
+  const { data, error } = await sb.from("rapports").select("id, numero, date_rapport, auteur, envoye_at, contenu").eq("chantier_id", c.id).order("created_at", { ascending: false });
+  const rb = $("cdRapports"); if (!rb || C.ouvert !== c.id) return;
+  C.rapports = data || [];
+  if (error) rb.innerHTML = `<div class="empty">Rapports indisponibles : ${esc(error.message)}</div>`;
+  else if (!C.rapports.length) rb.innerHTML = `<div class="empty">Aucun rapport pour ce chantier.</div>`;
+  else rb.innerHTML = C.rapports.map(r => `<div class="item"><div class="l"><strong class="mono">${esc(r.numero)}</strong><span>${esc(frDate(r.date_rapport))} · ${esc(nomDe(r.auteur))}${r.envoye_at ? " · envoyé ✓" : ""}</span></div><div class="r"><button type="button" class="btn small" data-act="voir" data-id="${r.id}">Ouvrir</button></div></div>`).join("");
+}
+$("view-chantiers").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const act = b.dataset.act, id = b.dataset.id, c = C.chantiers.find(x => x.id === id);
+  if (act === "ouvrir") { C.ouvert = id; C.confirm = null; renderDetail(); $("chDetail").scrollIntoView({ block: "start" }); }
+  else if (act === "fermer") { C.ouvert = null; renderDetail(); }
+  else if (act === "rapport" && c) choisirChantier(c);
+  else if (act === "maj" && c) {
+    const nom = $("cd-nom").value.trim(); if (!nom) return toast("Le chantier doit avoir un nom.");
+    const { error } = await sb.from("chantiers").update({ nom, client: $("cd-client").value.trim() || null, adresse: $("cd-adresse").value.trim() || null, ville: $("cd-ville").value.trim() || null }).eq("id", id);
+    if (error) return toast("Modification impossible : " + error.message);
+    toast("Chantier enregistré"); chargerChantiers();
+  }
+  else if (act === "aff") {
+    const u = b.dataset.u, on = b.getAttribute("aria-pressed") === "true";
+    const { error } = on ? await sb.from("affectations").delete().eq("chantier_id", id).eq("user_id", u) : await sb.from("affectations").insert({ chantier_id: id, user_id: u });
+    if (error) return toast("Affectation impossible : " + error.message);
+    if (on) C.affectations = C.affectations.filter(a => !(a.chantier_id === id && a.user_id === u)); else C.affectations.push({ chantier_id: id, user_id: u });
+    renderChantiers();
+  }
+  else if (act === "suppr" && c) {
+    if (C.confirm !== "ch:" + id) { C.confirm = "ch:" + id; return renderDetail(); }
+    C.confirm = null;
+    const { error } = await sb.from("chantiers").delete().eq("id", id);
+    if (error) return toast("Suppression impossible : " + error.message);
+    C.ouvert = null; toast("Chantier supprimé"); chargerChantiers();
+  }
+  else if (act === "voir") {
+    const r = C.rapports.find(x => x.id === id), ch = C.chantiers.find(x => x.id === C.ouvert);
+    if (!r || !r.contenu?.report) return toast("Ce rapport ne peut pas être ouvert.");
+    S.report = r.contenu.report; S.meta = Object.assign({}, r.contenu.meta || {}, { dbId: r.id }); S.chantier = ch || null;
+    S.photos = []; renderPhotos(); renderReport(); showTab("rapport"); $("captureBlock").hidden = true; $("resultBlock").hidden = false; window.scrollTo(0, 0);
+    toast("Les photos ne sont pas encore gardées en ligne (étape suivante).");
+  }
+});
+$("ch-create").addEventListener("click", async () => {
+  const nom = $("ch-nom").value.trim(); if (!nom) return toast("Donne un nom au chantier.");
+  const b = $("ch-create"); b.disabled = true;
+  try {
+    const { data, error } = await sb.from("chantiers").insert({ nom, ville: $("ch-ville").value.trim() || null, client: $("ch-client").value.trim() || null, adresse: $("ch-adresse").value.trim() || null }).select().single();
+    if (error) return toast("Création impossible : " + error.message);
+    ["ch-nom", "ch-ville", "ch-client", "ch-adresse"].forEach(i => $(i).value = "");
+    C.ouvert = data.id; toast("Chantier créé"); await chargerChantiers(); $("chDetail").scrollIntoView({ block: "start" });
+  } finally { b.disabled = false; }
+});
+
+/* --- Rapport rattaché au chantier --- */
+function choisirChantier(c){ S.chantier = c; showTab("rapport"); window.scrollTo(0, 0); }
+function renderBanner(){
+  const b = $("chBanner");
+  if (!S.chantier) { b.innerHTML = `<span>Rapport sans chantier : il sera gardé sur ce téléphone seulement.</span><button type="button" class="btn small" id="bnChoose">Choisir un chantier</button>`; }
+  else b.innerHTML = `<span>Rapport pour <strong>${esc(S.chantier.nom)}</strong>${S.chantier.ville ? " · " + esc(S.chantier.ville) : ""}</span><span class="btns" style="flex:0 0 auto"><button type="button" class="btn ghost small" id="bnChange">Changer</button></span>`;
+  b.hidden = false;
+  const go = () => showTab("chantiers");
+  $("bnChoose")?.addEventListener("click", go); $("bnChange")?.addEventListener("click", go);
+}
+function chantierContexte(){
+  const c = S.chantier; if (!c) return "";
+  return `CHANTIER SÉLECTIONNÉ DANS L'APPLI (prioritaire sur la dictée) : nom « ${c.nom} »${c.adresse || c.ville ? `, adresse « ${[c.adresse, c.ville].filter(Boolean).join(", ")} »` : ""}${c.client ? `, client « ${c.client} »` : ""}. Utilise ces informations pour les champs chantier, adresse et client.`;
+}
+function remplirDepuisChantier(){
+  const c = S.chantier, r = S.report; if (!c || !r) return;
+  r.infos.chantier = c.nom;
+  if (!r.infos.adresse && (c.adresse || c.ville)) r.infos.adresse = [c.adresse, c.ville].filter(Boolean).join(", ");
+  if (!r.infos.client && c.client) r.infos.client = c.client;
+}
+async function sauverEnLigne(quiet){
+  if (!sb || !ME.membre || !S.chantier || !S.report || !peut.rapport()) return;
+  const row = { chantier_id: S.chantier.id, numero: S.meta.num, date_rapport: isoDate(S.report.infos?.date), modele_id: S.meta.modelId || null,
+    contenu: { report: S.report, meta: Object.assign({}, S.meta, { dbId: undefined }) }, envoye_at: S.meta.sentTo ? new Date().toISOString() : null };
+  const q = S.meta.dbId ? sb.from("rapports").update(row).eq("id", S.meta.dbId).select("id").single() : sb.from("rapports").insert(row).select("id").single();
+  const { data, error } = await q;
+  if (error) { toast("Gardé sur le téléphone, mais pas en ligne : " + error.message); return; }
+  S.meta.dbId = data.id;
+  const h = store.get("bat.hist", []); const i = h.findIndex(x => x.meta.num === S.meta.num); if (i >= 0) { h[i].meta = S.meta; store.set("bat.hist", h); }
+  if (!quiet) toast(`Rapport enregistré dans le dossier « ${S.chantier.nom} »`);
+}
+
+/* --- Équipe (admin) --- */
+async function chargerEquipe(){
+  const [mb, inv] = await Promise.all([
+    sb.from("membres").select("user_id, nom, email, role, actif").order("nom"),
+    sb.from("invitations").select("email, nom, role, created_at").order("created_at", { ascending: false })
+  ]);
+  if (mb.error || inv.error) toast("Chargement incomplet : " + (mb.error || inv.error).message);
+  C.membres = mb.data || []; C.invitations = inv.data || []; renderEquipe();
+}
+function renderEquipe(){
+  const opts = (sel) => Object.entries(ROLES).map(([k, v]) => `<option value="${k}"${k === sel ? " selected" : ""}>${esc(v)}</option>`).join("");
+  $("eqList").innerHTML = C.membres.map(m => {
+    const moi = m.user_id === ME.user.id;
+    return `<div class="item"><div class="l"><strong>${esc(m.nom || m.email)}${moi ? " (toi)" : ""}${m.actif ? "" : ` <span class="pill">Désactivé</span>`}</strong><span>${esc(m.email)}</span></div><div class="r">${moi ? `<span class="pill ok">${esc(ROLES[m.role])}</span>` : `<select aria-label="Rôle de ${esc(m.nom || m.email)}" data-eq="role" data-u="${m.user_id}">${opts(m.role)}</select><button type="button" class="btn ghost small" data-eq="actif" data-u="${m.user_id}">${m.actif ? "Désactiver" : "Réactiver"}</button>`}</div></div>`;
+  }).join("") || `<div class="empty">Personne pour l'instant.</div>`;
+  $("eqInv").innerHTML = C.invitations.map(i => `<div class="item"><div class="l"><strong>${esc(i.nom || i.email)}</strong><span>${esc(i.email)} · ${esc(ROLES[i.role])} · pas encore connecté</span></div><div class="r"><button type="button" class="btn ghost small" data-eq="annuler" data-mail="${esc(i.email)}">Annuler</button></div></div>`).join("") || `<div class="empty">Aucune invitation en attente.</div>`;
+}
+$("view-equipe").addEventListener("change", async (e) => {
+  const s = e.target.closest("[data-eq='role']"); if (!s) return;
+  const { error } = await sb.from("membres").update({ role: s.value }).eq("user_id", s.dataset.u);
+  if (error) { toast("Modification impossible : " + error.message); return chargerEquipe(); }
+  toast("Rôle mis à jour"); chargerEquipe();
+});
+$("view-equipe").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-eq]"); if (!b || b.tagName === "SELECT") return;
+  if (b.dataset.eq === "actif") {
+    const m = C.membres.find(x => x.user_id === b.dataset.u); if (!m) return;
+    const { error } = await sb.from("membres").update({ actif: !m.actif }).eq("user_id", m.user_id);
+    if (error) return toast("Modification impossible : " + error.message);
+    toast(m.actif ? "Accès désactivé : cette personne ne voit plus rien" : "Accès réactivé"); chargerEquipe();
+  }
+  if (b.dataset.eq === "annuler") {
+    const { error } = await sb.from("invitations").delete().eq("email", b.dataset.mail);
+    if (error) return toast("Annulation impossible : " + error.message);
+    toast("Invitation annulée"); chargerEquipe();
+  }
+});
+$("eq-invite").addEventListener("click", async () => {
+  const email = $("eq-mail").value.trim().toLowerCase(), nom = $("eq-nom").value.trim(), role = $("eq-role").value;
+  if (!isMail(email)) return toast("Cette adresse e-mail n'est pas valide.");
+  const { error } = await sb.from("invitations").insert({ email, nom, role, entreprise_id: ME.membre.entreprise_id });
+  if (error) return toast(/duplicate|unique/i.test(error.message) ? "Une invitation existe déjà pour cette adresse." : /appartient/.test(error.message) ? "Cette personne appartient déjà à une entreprise." : "Invitation impossible : " + error.message);
+  $("eq-mail").value = ""; $("eq-nom").value = "";
+  toast(`C'est noté : ${nom || email} pourra se connecter avec ${email}`); chargerEquipe();
+});
+
+
 renderCompany(); renderModelSelect(); renderPhotos(); $("setupAlert").hidden = !!S.webhook;
+chargerSession();
 })();
 </script>
 </body>
