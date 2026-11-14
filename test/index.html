@@ -160,6 +160,16 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
 .banner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px;border:1px solid var(--accent);background:var(--accent-soft);font-size:14px}
 .item select{min-height:38px;max-width:190px;background:var(--sunk);color:var(--ink);border:1px solid var(--line);font:500 13px var(--body);padding:0 8px}
 .mono{font-family:var(--mono)}
+.pin-dots{display:flex;justify-content:center;gap:16px;margin:8px 0 4px}
+.pin-dots span{width:16px;height:16px;border:2px solid var(--accent-text);border-radius:50%}
+.pin-dots span.on{background:var(--accent-text)}
+.pin-dots.shake{animation:shake .35s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:300px;margin:0 auto;width:100%}
+.pin-pad button{min-height:62px;border:1px solid var(--line);background:var(--sunk);color:var(--ink);font:600 24px var(--display);cursor:pointer}
+.pin-pad button:active{background:var(--accent-soft);border-color:var(--accent)}
+.pin-pad button.fn{font:600 12px var(--mono);letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.pin-links{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -179,7 +189,7 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
     </div>
     <div class="panel" id="a-code" hidden>
       <h1>Regarde tes e-mails</h1>
-      <p>Code envoyé à <strong id="a-mailShown"></strong>. Pense à regarder dans les spams.</p>
+      <p>Mail envoyé à <strong id="a-mailShown"></strong> (regarde aussi les spams).</p><p><strong>Si le mail contient un lien</strong> : clique dessus, sur ce même appareil, tu seras connecté directement. <strong>S'il contient un code</strong> : tape-le ici.</p>
       <label class="f">Code reçu<input type="text" id="a-token" class="code-in" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="••••••"></label>
       <button type="button" class="btn primary" id="a-verify">Se connecter</button>
       <button type="button" class="btn ghost small" id="a-back">Changer d'adresse ou renvoyer un code</button>
@@ -188,6 +198,22 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
       <h1>Accès en attente</h1>
       <p>Tu es bien connecté avec <strong id="a-waitMail"></strong>, mais aucune entreprise ne t'a encore ajouté. Demande à ton responsable de t'inviter avec cette adresse, puis reconnecte-toi.</p>
       <button type="button" class="btn" data-logout>Se déconnecter</button>
+    </div>
+    <div class="panel" id="a-pin" hidden>
+      <h1 id="p-titre">Code PIN</h1>
+      <p id="p-sous"></p>
+      <div class="pin-dots" id="p-dots" aria-live="polite"><span></span><span></span><span></span><span></span></div>
+      <div class="pin-pad" id="p-pad">
+        <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button>
+        <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button>
+        <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button>
+        <span></span><button type="button" data-k="0">0</button><button type="button" class="fn" data-k="del" aria-label="Effacer">Effacer</button>
+      </div>
+      <div class="pin-links">
+        <button type="button" class="btn ghost small" id="p-oubli">Code PIN oublié</button>
+        <button type="button" class="btn ghost small" id="p-annuler" hidden>Annuler</button>
+        <button type="button" class="btn ghost small" data-logout>Se déconnecter</button>
+      </div>
     </div>
     <div class="panel" id="a-off" hidden>
       <h1>Petit souci</h1>
@@ -320,7 +346,12 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
     <div class="panel">
       <h2>Mon compte</h2>
       <div class="list" id="compteInfo"></div>
-      <button type="button" class="btn" data-logout>Se déconnecter</button>
+      <div class="btns">
+        <button type="button" class="btn" id="pinChange">Changer mon code PIN</button>
+        <button type="button" class="btn" id="pinLock">Verrouiller maintenant</button>
+        <button type="button" class="btn ghost" data-logout>Se déconnecter</button>
+      </div>
+      <div class="hint">Le code PIN est redemandé toutes les 24 heures, sur chaque téléphone et chaque PC.</div>
     </div>
     <div class="panel">
       <h2>Connexion à Make</h2>
@@ -965,7 +996,7 @@ if (!standalone && /iphone|ipad|ipod/i.test(navigator.userAgent)) {
 /* ---------- Comptes, entreprises et chantiers (Supabase) ---------- */
 const SB_URL = "https://qbrargbswmsetzllnvow.supabase.co";
 const SB_KEY = "sb_publishable_A1oglRzOaECG2O37X4gqwA_3fYrBEHc";
-const sb = window.supabase ? window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: "bat.sb" } }) : null;
+const sb = window.supabase ? window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "implicit", storageKey: "bat.sb" } }) : null;
 const ROLES = { admin: "Admin", conducteur: "Conducteur / chargé d'affaires", chef: "Chef d'équipe", compagnon: "Compagnon" };
 const ME = { user: null, membre: null, entreprise: null };
 const C = { chantiers: [], membres: [], affectations: [], invitations: [], ouvert: null, rapports: [], confirm: null };
@@ -987,14 +1018,14 @@ function frDate(iso){ const m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2}
 /* --- Connexion par code --- */
 let authEmail = "";
 function authMsg(m){ $("a-msg").textContent = m; $("a-msg").hidden = !m; }
-function authStep(step){ ["a-email", "a-code", "a-wait", "a-off"].forEach(id => $(id).hidden = id !== step); authMsg(""); }
+function authStep(step){ ["a-email", "a-code", "a-wait", "a-off", "a-pin"].forEach(id => $(id).hidden = id !== step); authMsg(""); }
 function showAuth(step){ $("authView").hidden = false; $("appView").hidden = true; authStep(step); }
 $("a-send").addEventListener("click", async () => {
   const email = $("a-mail").value.trim().toLowerCase();
   if (!isMail(email)) return authMsg("Cette adresse e-mail n'est pas valide.");
   const b = $("a-send"); b.disabled = true; b.textContent = "Envoi…";
   try {
-    const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+    const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: location.origin + location.pathname } });
     if (error) return authMsg(/rate|limit|second|too many/i.test(error.message) ? "Trop de demandes de code. Attends une minute puis réessaie." : "Envoi du code impossible : " + error.message);
     authEmail = email; $("a-mailShown").textContent = email; authStep("a-code"); $("a-token").value = ""; $("a-token").focus();
   } finally { b.disabled = false; b.textContent = "Recevoir mon code"; }
@@ -1013,16 +1044,104 @@ $("a-verify").addEventListener("click", async () => {
 $("a-token").addEventListener("keydown", (e) => { if (e.key === "Enter") $("a-verify").click(); });
 $("a-back").addEventListener("click", () => authStep("a-email"));
 $("a-retry").addEventListener("click", () => location.reload());
-document.querySelectorAll("[data-logout]").forEach(b => b.addEventListener("click", async () => {
+async function deconnecter(msg){
+  clearTimeout(PIN.timer); PIN.fin = null; PIN.change = false;
+  try { await sb.rpc("verrouiller"); } catch {}
   try { await sb.auth.signOut(); } catch {}
   ME.user = ME.membre = ME.entreprise = null; S.chantier = null; showAuth("a-email");
-}));
+  if (msg) authMsg(msg);
+}
+document.querySelectorAll("[data-logout]").forEach(b => b.addEventListener("click", () => deconnecter()));
+
+/* --- Code PIN (redemandé toutes les 24 h, vérifié par la base) --- */
+const PIN = { mode: null, saisie: "", premier: "", fin: null, timer: null, busy: false, change: false };
+const TEXTES_PIN = {
+  creer1: ["Choisis ton code PIN", "4 chiffres, rien que pour toi. Il te sera demandé pour ouvrir Batiria, toutes les 24 heures."],
+  creer2: ["Confirme ton code PIN", "Tape-le une deuxième fois."],
+  entrer: ["Code PIN", "Tape ton code pour ouvrir Batiria."]
+};
+function pinDots(){ $("p-dots").querySelectorAll("span").forEach((d, i) => d.classList.toggle("on", i < PIN.saisie.length)); }
+function pinShake(){ const d = $("p-dots"); d.classList.remove("shake"); void d.offsetWidth; d.classList.add("shake"); }
+function pinShow(mode, msg){
+  PIN.mode = mode; PIN.saisie = ""; if (mode === "creer1") PIN.premier = "";
+  $("authView").hidden = false; $("appView").hidden = true; authStep("a-pin");
+  $("p-titre").textContent = TEXTES_PIN[mode][0]; $("p-sous").textContent = TEXTES_PIN[mode][1];
+  $("p-oubli").hidden = mode !== "entrer"; $("p-annuler").hidden = !PIN.change;
+  pinDots(); if (msg) authMsg(msg);
+}
+const TROP_SIMPLE = (v) => /^(\d)\1{3}$/.test(v) || ["1234", "4321", "0123", "9876"].includes(v);
+async function pinValider(){
+  const v = PIN.saisie;
+  if (PIN.mode === "creer1") {
+    if (TROP_SIMPLE(v)) { PIN.saisie = ""; pinDots(); pinShake(); return authMsg("Code trop simple, choisis-en un autre."); }
+    PIN.premier = v; return pinShow("creer2");
+  }
+  PIN.busy = true;
+  try {
+    if (PIN.mode === "creer2") {
+      if (v !== PIN.premier) return pinShow("creer1", "Les deux codes ne sont pas identiques. Recommence.");
+      const { data, error } = await sb.rpc("definir_pin", { nouveau: v });
+      if (error) return pinShow("creer1", error.message);
+      toast("Code PIN enregistré");
+      return ouvrirApp(data.valide_jusqua);
+    }
+    const { data, error } = await sb.rpc("verifier_pin", { essai: v });
+    if (error) { PIN.saisie = ""; pinDots(); return authMsg("Vérification impossible : " + error.message); }
+    if (data.ok) return ouvrirApp(data.valide_jusqua);
+    if (data.raison === "faux") { PIN.saisie = ""; pinDots(); pinShake(); return authMsg(`Code incorrect. Encore ${data.restants} essai${data.restants > 1 ? "s" : ""} avant blocage.`); }
+    if (data.raison === "bloque") return deconnecter("Code PIN bloqué après 5 erreurs. Reconnecte-toi avec un code reçu par mail, puis choisis un nouveau PIN.");
+    if (data.raison === "desactive") return deconnecter("Ton accès a été désactivé par ton entreprise.");
+    if (data.raison === "aucun_pin") return pinShow("creer1");
+  } finally { PIN.busy = false; }
+}
+function pinTouche(k){
+  if (PIN.busy || $("a-pin").hidden) return;
+  if (k === "del") PIN.saisie = PIN.saisie.slice(0, -1);
+  else if (PIN.saisie.length < 4) PIN.saisie += k;
+  authMsg(""); pinDots();
+  if (PIN.saisie.length === 4) pinValider();
+}
+$("p-pad").addEventListener("click", (e) => { const b = e.target.closest("button[data-k]"); if (b) pinTouche(b.dataset.k); });
+document.addEventListener("keydown", (e) => {
+  if ($("a-pin").hidden || e.target.closest("input, textarea, select")) return;
+  if (/^[0-9]$/.test(e.key)) { e.preventDefault(); pinTouche(e.key); }
+  else if (e.key === "Backspace") { e.preventDefault(); pinTouche("del"); }
+});
+$("p-oubli").addEventListener("click", async () => {
+  if ($("p-oubli").dataset.confirm !== "1") { $("p-oubli").dataset.confirm = "1"; $("p-oubli").textContent = "Confirmer : recevoir un code par mail"; return; }
+  $("p-oubli").dataset.confirm = ""; $("p-oubli").textContent = "Code PIN oublié";
+  try { await sb.rpc("pin_oublie"); } catch {}
+  deconnecter("Reconnecte-toi avec un code reçu par mail, puis choisis un nouveau code PIN.");
+});
+$("p-annuler").addEventListener("click", () => { PIN.change = false; $("authView").hidden = true; $("appView").hidden = false; });
+$("pinChange").addEventListener("click", () => { PIN.change = true; pinShow("creer1"); });
+$("pinLock").addEventListener("click", async () => { try { await sb.rpc("verrouiller"); } catch {} verrouillerLocal(""); });
+function verrouillerLocal(msg){
+  clearTimeout(PIN.timer); PIN.fin = null; PIN.change = false;
+  pinShow("entrer", msg === undefined ? "Ça fait 24 heures : retape ton code PIN." : msg);
+}
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && PIN.fin && Date.now() >= PIN.fin) verrouillerLocal();
+});
 
 async function chargerSession(){
   if (!sb) { showAuth("a-off"); $("a-offTxt").textContent = "Le module de connexion n'a pas pu se charger. Vérifie ta connexion internet, puis réessaie."; return; }
   const { data: { session } } = await sb.auth.getSession();
   if (!session) return showAuth("a-email");
   ME.user = session.user;
+  const { data: e, error } = await sb.rpc("etat_pin");
+  if (error) { showAuth("a-off"); $("a-offTxt").textContent = /etat_pin|function|schema cache/i.test(error.message) ? "Le code PIN n'est pas encore installé dans la base : lance le script 03 dans Supabase." : "Impossible de charger ton compte : " + error.message; return; }
+  if (!e.membre) { showAuth("a-wait"); $("a-waitMail").textContent = ME.user.email; return; }
+  if (e.bloque && !e.reconnecte_depuis_blocage) return deconnecter("Code PIN bloqué. Reconnecte-toi avec un code reçu par mail, puis choisis un nouveau PIN.");
+  if (!e.a_pin || e.bloque) { PIN.change = false; return pinShow("creer1"); }
+  if (e.valide_jusqua) return ouvrirApp(e.valide_jusqua);
+  pinShow("entrer");
+}
+async function ouvrirApp(fin){
+  PIN.fin = new Date(fin).getTime(); clearTimeout(PIN.timer);
+  PIN.timer = setTimeout(() => verrouillerLocal(), Math.max(1000, Math.min(PIN.fin - Date.now(), 2147000000)));
+  if (PIN.change && ME.membre) { PIN.change = false; $("authView").hidden = true; $("appView").hidden = false; return; }
+  PIN.change = false;
   const { data, error } = await sb.from("membres").select("user_id, role, nom, email, entreprise_id, entreprises(nom, actif)").eq("user_id", ME.user.id).maybeSingle();
   if (error) { showAuth("a-off"); $("a-offTxt").textContent = "Impossible de charger ton compte : " + error.message; return; }
   if (!data || !data.entreprises) { showAuth("a-wait"); $("a-waitMail").textContent = ME.user.email; return; }
@@ -1036,7 +1155,7 @@ async function chargerSession(){
   renderCompte();
   showTab("chantiers");
 }
-if (sb) sb.auth.onAuthStateChange((evt) => { if (evt === "SIGNED_OUT") showAuth("a-email"); });
+if (sb) sb.auth.onAuthStateChange((evt) => { if (evt === "SIGNED_OUT" && $("a-email").hidden && $("a-code").hidden) setTimeout(() => { if ($("a-email").hidden && $("a-code").hidden) showAuth("a-email"); }, 0); });
 
 function renderCompte(){
   const box = $("compteInfo"); if (!box || !ME.membre) return;
