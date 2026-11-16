@@ -1257,7 +1257,7 @@ $("ch-create").addEventListener("click", async () => {
 async function appelMake(action, fd, signal){
   const { data: { session } } = await sb.auth.getSession();
   if (!session) throw { code: "http", status: 401 };
-  return fetch(`${SB_URL}/functions/v1/relais-make?action=${action}`, { method: "POST", body: fd, signal, headers: { Authorization: "Bearer " + session.access_token, apikey: SB_KEY } });
+  return fetch(`${SB_URL}/functions/v1/RELAIS-MAKE-?action=${action}`, { method: "POST", body: fd, signal, headers: { Authorization: "Bearer " + session.access_token, apikey: SB_KEY } });
 }
 
 /* --- Rapport rattaché au chantier --- */
