@@ -171,6 +171,17 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
 .pin-pad button.fn{font:600 12px var(--mono);letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
 #view-reglages.lecture #newModel,#view-reglages.lecture #logoRemove,#view-reglages.lecture #modelList button{display:none}
 #view-reglages.lecture .logo-drop{pointer-events:none}
+.seg{display:flex;border:1px solid var(--line);background:var(--sunk)}
+.seg button{flex:1;min-height:42px;border:0;background:transparent;color:var(--muted);font:600 11px var(--mono);letter-spacing:1px;text-transform:uppercase;cursor:pointer;border-bottom:2px solid transparent}
+.seg button[aria-pressed="true"]{color:var(--ink);background:var(--surface);border-bottom-color:var(--accent)}
+.dos-add{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px dashed var(--line);background:var(--sunk)}
+.dos-add input[type=file]{display:none}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.gal figure{margin:0;display:flex;flex-direction:column;gap:6px;background:var(--sunk);border:1px solid var(--line);padding:6px}
+.gal img{width:100%;aspect-ratio:4/3;object-fit:cover;background:var(--raise);cursor:pointer;display:block}
+.gal figcaption{font-size:12px;color:var(--muted);line-height:1.35}
+.gal figcaption b{color:var(--ink);font-weight:500}
+.note-txt{white-space:pre-wrap;color:var(--ink);font-size:14px}
 .pin-links{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
 </style>
 </head>
@@ -1001,7 +1012,7 @@ const SB_KEY = "sb_publishable_A1oglRzOaECG2O37X4gqwA_3fYrBEHc";
 const sb = window.supabase ? window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "implicit", storageKey: "bat.sb" } }) : null;
 const ROLES = { admin: "Admin", conducteur: "Conducteur / chargé d'affaires", chef: "Chef d'équipe", compagnon: "Compagnon" };
 const ME = { user: null, membre: null, entreprise: null };
-const C = { chantiers: [], membres: [], affectations: [], invitations: [], ouvert: null, rapports: [], confirm: null };
+const C = { chantiers: [], membres: [], affectations: [], invitations: [], ouvert: null, rapports: [], confirm: null, fichiers: [], dosTab: "photos", urls: {} };
 S.chantier = null;
 const peut = {
   creer: () => ["admin", "conducteur"].includes(ME.membre?.role),
@@ -1199,12 +1210,16 @@ async function renderDetail(){
   const actifs = C.membres.filter(m => m.actif);
   if (g) h += `<div class="chips">${actifs.map(m => `<button type="button" class="chip" data-act="aff" data-id="${c.id}" data-u="${m.user_id}" aria-pressed="${aff.has(m.user_id)}">${esc(m.nom || m.email)} · ${esc(ROLES[m.role].split(" ")[0])}</button>`).join("")}</div><div class="hint">Touche une personne pour l'affecter ou la retirer. Elle ne voit que les chantiers où elle est affectée.</div>`;
   else h += `<div class="hint">${esc(actifs.filter(m => aff.has(m.user_id)).map(m => m.nom || m.email).join(", ") || "Personne")}</div>`;
-  h += `<div class="tag" style="margin-top:6px"><b>02</b>Rapports du chantier</div><div class="list" id="cdRapports"><div class="empty">Chargement…</div></div>`;
+  h += `<div class="tag" style="margin-top:6px"><b>02</b>Dossier du chantier</div>
+    <div class="seg">${[["plans", "Plans & détails"], ["photos", "Photos"], ["notes", "Notes"]].map(([k, v]) => `<button type="button" data-act="dtab" data-t="${k}" aria-pressed="${C.dosTab === k}">${v}</button>`).join("")}</div>
+    <div id="cdDossier"><div class="empty">Chargement…</div></div>`;
+  h += `<div class="tag" style="margin-top:6px"><b>03</b>Rapports du chantier</div><div class="list" id="cdRapports"><div class="empty">Chargement…</div></div>`;
   const btns = [];
   if (peut.rapport()) btns.push(`<button type="button" class="btn primary" data-act="rapport" data-id="${c.id}">Faire un rapport vocal</button>`);
   if (peut.admin()) btns.push(`<button type="button" class="btn ghost" data-act="suppr" data-id="${c.id}">${C.confirm === "ch:" + c.id ? "Confirmer la suppression" : "Supprimer le chantier"}</button>`);
   if (btns.length) h += `<div class="btns">${btns.join("")}</div>`;
   box.innerHTML = h; box.hidden = false;
+  chargerDossier(c);
   const { data, error } = await sb.from("rapports").select("id, numero, date_rapport, auteur, envoye_at, contenu").eq("chantier_id", c.id).order("created_at", { ascending: false });
   const rb = $("cdRapports"); if (!rb || C.ouvert !== c.id) return;
   C.rapports = data || [];
@@ -1238,6 +1253,11 @@ $("view-chantiers").addEventListener("click", async (e) => {
     if (error) return toast("Suppression impossible : " + error.message);
     C.ouvert = null; toast("Chantier supprimé"); chargerChantiers();
   }
+  else if (act === "dtab") { C.dosTab = b.dataset.t; C.confirm = null; document.querySelectorAll('[data-act="dtab"]').forEach(x => x.setAttribute("aria-pressed", String(x.dataset.t === C.dosTab))); renderDossier(); }
+  else if (act === "fopen") ouvrirFichier(id);
+  else if (act === "fsuppr") supprimerFichier(id);
+  else if (act === "fchoisir") $(b.dataset.input)?.click();
+  else if (act === "noteAdd") ajouterNote();
   else if (act === "voir") {
     const r = C.rapports.find(x => x.id === id), ch = C.chantiers.find(x => x.id === C.ouvert);
     if (!r || !r.contenu?.report) return toast("Ce rapport ne peut pas être ouvert.");
@@ -1286,6 +1306,102 @@ async function sauverEntreprise(maj, ok){
   if (error) { toast("Pas enregistré en ligne : " + error.message); return false; }
   Object.assign(ME.entreprise, maj); if (ok) toast(ok); return true;
 }
+
+/* --- Dossier chantier : plans, détails, photos, notes --- */
+const BUCKET = "chantiers";
+const dateCourte = (iso) => { const d = new Date(iso); return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} à ${pad(d.getHours())}h${pad(d.getMinutes())}`; };
+const peutSupprimer = (f, c) => f.auteur === ME.user.id || gere(c);
+async function chargerDossier(c){
+  const { data, error } = await sb.from("fichiers").select("*").eq("chantier_id", c.id).order("created_at", { ascending: false });
+  if (C.ouvert !== c.id) return;
+  if (error) { const box = $("cdDossier"); if (box) box.innerHTML = `<div class="empty">Dossier indisponible : ${esc(error.message)}</div>`; return; }
+  C.fichiers = data || [];
+  if (!C.urlsAt || Date.now() - C.urlsAt > 45 * 60 * 1000) { C.urls = {}; C.urlsAt = Date.now(); }
+  const sans = C.fichiers.filter(f => f.chemin && !C.urls[f.chemin]).map(f => f.chemin);
+  if (sans.length) {
+    const { data: u } = await sb.storage.from(BUCKET).createSignedUrls(sans, 3600);
+    (u || []).forEach(x => { if (x.signedUrl) C.urls[x.path] = x.signedUrl; });
+  }
+  renderDossier();
+}
+function renderDossier(){
+  const box = $("cdDossier"), c = C.chantiers.find(x => x.id === C.ouvert); if (!box || !c) return;
+  const sig = (f) => `par <b>${esc(nomDe(f.auteur))}</b> · ${esc(dateCourte(f.created_at))}`;
+  const suppr = (f) => peutSupprimer(f, c) ? `<button type="button" class="btn ghost small" data-act="fsuppr" data-id="${f.id}">${C.confirm === "f:" + f.id ? "Confirmer" : "Supprimer"}</button>` : "";
+  let h = "";
+  if (C.dosTab === "plans") {
+    const items = C.fichiers.filter(f => f.type === "plan" || f.type === "detail");
+    if (gere(c)) h += `<div class="dos-add"><div class="grid2"><label class="f">Type<select id="fType"><option value="plan">Plan</option><option value="detail">Détail</option></select></label><label class="f">Titre (facultatif)<input type="text" id="fTitre" placeholder="Ex. : Plan toiture R+3"></label></div>
+      <input type="file" id="fPlans" accept="application/pdf,image/*" multiple><button type="button" class="btn primary" data-act="fchoisir" data-input="fPlans">Ajouter un plan (PDF ou image)</button></div>`;
+    h += items.length ? `<div class="list">${items.map(f => `<div class="item"><div class="l"><strong>${esc(f.titre || f.nom_fichier || "Document")}</strong><span>${f.type === "plan" ? "Plan" : "Détail"} · ${sig(f)}</span></div><div class="r"><button type="button" class="btn small" data-act="fopen" data-id="${f.id}">Ouvrir</button>${suppr(f)}</div></div>`).join("")}</div>`
+      : `<div class="empty">Aucun plan pour l'instant.${gere(c) ? "" : " Le conducteur de travaux les ajoutera ici."}</div>`;
+  } else if (C.dosTab === "photos") {
+    const items = C.fichiers.filter(f => f.type === "photo");
+    h += `<div class="dos-add"><label class="f">Légende (facultatif)<input type="text" id="fLegende" placeholder="Ex. : Relevé d'étanchéité zone A"></label>
+      <input type="file" id="fPhotos" accept="image/*" multiple><button type="button" class="btn primary" data-act="fchoisir" data-input="fPhotos">Ajouter des photos</button></div>`;
+    h += items.length ? `<div class="gal">${items.map(f => `<figure><img src="${esc(C.urls[f.chemin] || "")}" alt="${esc(f.texte || "Photo du chantier")}" loading="lazy" data-act="fopen" data-id="${f.id}"><figcaption>${f.texte ? esc(f.texte) + "<br>" : ""}${sig(f)}</figcaption>${suppr(f)}</figure>`).join("")}</div>`
+      : `<div class="empty">Aucune photo pour l'instant.</div>`;
+  } else {
+    const items = C.fichiers.filter(f => f.type === "note");
+    h += `<div class="dos-add"><label class="f">Nouvelle note<textarea id="fNote" rows="3" placeholder="Ex. : Livraison isolant prévue jeudi, accès par le portail nord."></textarea></label><button type="button" class="btn primary" data-act="noteAdd">Ajouter la note</button></div>`;
+    h += items.length ? `<div class="list">${items.map(f => `<div class="item"><div class="l"><span class="note-txt">${esc(f.texte)}</span><span>${sig(f)}</span></div><div class="r">${suppr(f)}</div></div>`).join("")}</div>`
+      : `<div class="empty">Aucune note pour l'instant.</div>`;
+  }
+  box.innerHTML = h;
+}
+const nomPropre = (n) => String(n || "fichier").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9._-]+/g, "-").slice(-60);
+async function compresserPhoto(f){
+  const { im, u } = await loadImage(f); const r = Math.min(1, 1600 / Math.max(im.naturalWidth, im.naturalHeight));
+  const c = document.createElement("canvas"); c.width = Math.round(im.naturalWidth * r); c.height = Math.round(im.naturalHeight * r);
+  c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
+  return new Promise(res => c.toBlob(res, "image/jpeg", 0.82));
+}
+async function envoyerFichiers(files, type, titre, texte){
+  const c = C.chantiers.find(x => x.id === C.ouvert); if (!c || !files.length) return;
+  let ok = 0;
+  for (const f of files) {
+    try {
+      let blob = f, nom = f.name, mime = f.type || "application/octet-stream";
+      if (type === "photo" || (mime.startsWith("image/") && mime !== "image/svg+xml")) { blob = await compresserPhoto(f); nom = nom.replace(/\.[^.]+$/, "") + ".jpg"; mime = "image/jpeg"; }
+      if (!blob) throw new Error("image illisible");
+      if (blob.size > 25 * 1024 * 1024) { toast(`${f.name} dépasse 25 Mo.`); continue; }
+      const chemin = `${c.entreprise_id}/${c.id}/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}-${nomPropre(nom)}`;
+      toast(`Envoi de ${f.name}…`);
+      const up = await sb.storage.from(BUCKET).upload(chemin, blob, { contentType: mime, upsert: false });
+      if (up.error) throw up.error;
+      const { error } = await sb.from("fichiers").insert({ chantier_id: c.id, type, titre: titre || (type === "photo" ? null : f.name.replace(/\.[^.]+$/, "")), texte: texte || null, chemin, nom_fichier: nom, mime, taille: blob.size });
+      if (error) { await sb.storage.from(BUCKET).remove([chemin]); throw error; }
+      ok++;
+    } catch (e) { toast(`${f.name} n'a pas pu être envoyé : ${e?.message || "erreur"}`); }
+  }
+  if (ok) toast(ok > 1 ? `${ok} fichiers ajoutés au dossier` : "Ajouté au dossier");
+  chargerDossier(c);
+}
+async function ajouterNote(){
+  const c = C.chantiers.find(x => x.id === C.ouvert), t = $("fNote")?.value.trim(); if (!c) return;
+  if (!t) return toast("Écris d'abord ta note.");
+  const { error } = await sb.from("fichiers").insert({ chantier_id: c.id, type: "note", texte: t });
+  if (error) return toast("Note non enregistrée : " + error.message);
+  toast("Note ajoutée"); chargerDossier(c);
+}
+function ouvrirFichier(id){
+  const f = C.fichiers.find(x => x.id === id); const u = f && C.urls[f.chemin];
+  if (!u) return toast("Ce fichier n'est pas disponible, recharge la page.");
+  window.open(u, "_blank", "noopener");
+}
+async function supprimerFichier(id){
+  const f = C.fichiers.find(x => x.id === id); if (!f) return;
+  if (C.confirm !== "f:" + id) { C.confirm = "f:" + id; return renderDossier(); }
+  C.confirm = null;
+  const { error } = await sb.from("fichiers").delete().eq("id", id);
+  if (error) return toast("Suppression impossible : " + error.message);
+  if (f.chemin) { await sb.storage.from(BUCKET).remove([f.chemin]); delete C.urls[f.chemin]; }
+  toast("Supprimé du dossier"); chargerDossier(C.chantiers.find(x => x.id === C.ouvert));
+}
+$("view-chantiers").addEventListener("change", (e) => {
+  if (e.target.id === "fPlans") { const fs = Array.from(e.target.files || []); e.target.value = ""; envoyerFichiers(fs, $("fType").value, $("fTitre").value.trim(), null); }
+  if (e.target.id === "fPhotos") { const fs = Array.from(e.target.files || []); e.target.value = ""; envoyerFichiers(fs, "photo", null, $("fLegende").value.trim()); }
+});
 
 /* --- Appel à Make via le relais sécurisé (Supabase) --- */
 async function appelMake(action, fd, signal){
