@@ -169,6 +169,8 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
 .pin-pad button{min-height:62px;border:1px solid var(--line);background:var(--sunk);color:var(--ink);font:600 24px var(--display);cursor:pointer}
 .pin-pad button:active{background:var(--accent-soft);border-color:var(--accent)}
 .pin-pad button.fn{font:600 12px var(--mono);letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+#view-reglages.lecture #newModel,#view-reglages.lecture #logoRemove,#view-reglages.lecture #modelList button{display:none}
+#view-reglages.lecture .logo-drop{pointer-events:none}
 .pin-links{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
 </style>
 </head>
@@ -353,6 +355,7 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
       </div>
       <div class="hint">Le code PIN est redemandé toutes les 24 heures, sur chaque téléphone et chaque PC.</div>
     </div>
+    <div class="alert" id="reglagesInfo" hidden>Le mail du bureau, le nom, le logo et les modèles sont réglés par l'admin de ton entreprise, pour toute l'équipe.</div>
     <div class="panel">
       <h2>Connexion à Make</h2>
       <div class="hint">Gérée par Batiria, en sécurité sur le serveur : rien à régler sur ce téléphone.</div>
@@ -364,7 +367,7 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
       <label class="f">E-mail de l'admin (destinataire des rapports)<input type="text" inputmode="email" id="s-admin" autocomplete="off" placeholder="bureau@monentreprise.fr"></label>
       <label class="f">Copie à (optionnel)<input type="text" inputmode="email" id="s-cc" autocomplete="off" placeholder="conducteur@monentreprise.fr"></label>
       <input type="hidden" id="s-mailhook">
-      <div class="hint">Le bouton « Envoyer au bureau » envoie le rapport en PDF et en Word à cette adresse, sans rien demander au technicien.</div>
+      <div class="hint">Le bouton « Envoyer au bureau » envoie le rapport en PDF et en Word à cette adresse, sans rien demander au technicien. Réglé une fois par l'admin, valable pour toute l'équipe.</div>
     </div>
     <div class="panel">
       <h2>Mon entreprise</h2>
@@ -925,10 +928,11 @@ $("s-webhook").addEventListener("change", () => { S.webhook = $("s-webhook").val
 $("s-key").addEventListener("change", () => { S.key = $("s-key").value; store.set("bat.key", S.key); toast("Code enregistré"); });
 const isMail = (m) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m);
 $("s-admin").value = S.admin; $("s-cc").value = S.cc; $("s-mailhook").value = S.mailhook;
-$("s-admin").addEventListener("change", () => { const v = $("s-admin").value.trim(); if (v && !isMail(v)) return toast("Cette adresse e-mail n'est pas valide."); S.admin = v; store.set("bat.admin", v); toast("E-mail de l'admin enregistré"); updateSendHint(); });
-$("s-cc").addEventListener("change", () => { const v = $("s-cc").value.trim(); if (v && !isMail(v)) return toast("Cette adresse e-mail n'est pas valide."); S.cc = v; store.set("bat.cc", v); toast("Copie enregistrée"); });
+$("s-admin").addEventListener("change", () => { const v = $("s-admin").value.trim(); if (v && !isMail(v)) return toast("Cette adresse e-mail n'est pas valide."); S.admin = v; store.set("bat.admin", v); updateSendHint(); sauverEntreprise({ admin_email: v || null }, "Mail du bureau enregistré pour toute l'équipe"); });
+$("s-cc").addEventListener("change", () => { const v = $("s-cc").value.trim(); if (v && !isMail(v)) return toast("Cette adresse e-mail n'est pas valide."); S.cc = v; store.set("bat.cc", v); sauverEntreprise({ cc_email: v || null }, "Copie enregistrée pour toute l'équipe"); });
 $("s-mailhook").addEventListener("change", () => { S.mailhook = $("s-mailhook").value.trim(); store.set("bat.mailhook", S.mailhook); toast("Webhook d'envoi enregistré"); updateSendHint(); });
 $("s-company").addEventListener("input", () => { S.company = $("s-company").value || "Mon entreprise"; store.set("bat.company", S.company); });
+$("s-company").addEventListener("change", () => { if ($("s-company").value.trim()) sauverEntreprise({ nom: $("s-company").value.trim() }, "Nom enregistré pour toute l'équipe"); });
 function renderCompany(){ $("logoRow").hidden = !S.logo; $("logoEmpty").hidden = !!S.logo; $("logoRemove").hidden = !S.logo; if (S.logo) $("logoPreview").src = S.logo; }
 $("s-logo").addEventListener("change", async (e) => {
   const f = e.target.files?.[0]; e.target.value = ""; if (!f) return;
@@ -936,13 +940,13 @@ $("s-logo").addEventListener("change", async (e) => {
     const { im, u } = await loadImage(f); const r = Math.min(1, 800 / im.naturalWidth, 400 / im.naturalHeight);
     const c = document.createElement("canvas"); c.width = Math.round(im.naturalWidth * r); c.height = Math.round(im.naturalHeight * r);
     const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
-    S.logo = c.toDataURL("image/jpeg", 0.92);
-    if (!store.set("bat.logo", S.logo)) toast("Logo ajouté pour cette session, mais la mémoire du téléphone est pleine : il ne sera pas gardé.");
-    else toast("Logo ajouté : il apparaîtra sur le PDF et le Word");
+    S.logo = c.toDataURL("image/jpeg", 0.85);
+    store.set("bat.logo", S.logo);
+    sauverEntreprise({ logo_data: S.logo }, "Logo enregistré : il apparaîtra sur les rapports de toute l'équipe");
     renderCompany(); if (S.report) renderReport();
   } catch { toast("Ce logo n'a pas pu être lu. Essaie un PNG ou un JPG."); }
 });
-$("logoRemove").addEventListener("click", () => { S.logo = null; store.set("bat.logo", null); renderCompany(); if (S.report) renderReport(); toast("Logo retiré"); });
+$("logoRemove").addEventListener("click", () => { S.logo = null; store.set("bat.logo", null); renderCompany(); if (S.report) renderReport(); sauverEntreprise({ logo_data: null }, "Logo retiré pour toute l'équipe"); });
 
 let editing = null;
 function renderModelList(){
@@ -968,11 +972,11 @@ $("saveModel").addEventListener("click", () => {
   const id = editing || "m" + Date.now().toString(36);
   const data = { id, nom, dest: $("m-dest").value.trim() || "client", ton: $("m-ton").value.trim() || "Professionnel et factuel.", sections, champs: $("m-champs").value.split("\n").map(s => s.trim()).filter(Boolean) };
   const i = custom.findIndex(x => x.id === id); if (i >= 0) custom[i] = data; else custom.push(data);
-  store.set("bat.models", custom); $("modelEditor").hidden = true; renderModelList(); renderModelSelect(); toast("Modèle enregistré");
+  store.set("bat.models", custom); $("modelEditor").hidden = true; renderModelList(); renderModelSelect(); sauverEntreprise({ modeles: custom }, "Modèle enregistré pour toute l'équipe");
 });
 $("deleteModel").addEventListener("click", () => {
   if ($("deleteModel").textContent !== "Confirmer la suppression") { $("deleteModel").textContent = "Confirmer la suppression"; return; }
-  custom = custom.filter(x => x.id !== editing); store.set("bat.models", custom); $("modelEditor").hidden = true; renderModelList(); renderModelSelect(); toast("Modèle supprimé");
+  custom = custom.filter(x => x.id !== editing); store.set("bat.models", custom); $("modelEditor").hidden = true; renderModelList(); renderModelSelect(); sauverEntreprise({ modeles: custom }, "Modèle supprimé pour toute l'équipe");
 });
 
 /* ---------- Install (PWA) ---------- */
@@ -1140,12 +1144,12 @@ async function ouvrirApp(fin){
   PIN.timer = setTimeout(() => verrouillerLocal(), Math.max(1000, Math.min(PIN.fin - Date.now(), 2147000000)));
   if (PIN.change && ME.membre) { PIN.change = false; $("authView").hidden = true; $("appView").hidden = false; return; }
   PIN.change = false;
-  const { data, error } = await sb.from("membres").select("user_id, role, nom, email, entreprise_id, entreprises(nom, actif)").eq("user_id", ME.user.id).maybeSingle();
+  const { data, error } = await sb.from("membres").select("user_id, role, nom, email, entreprise_id, entreprises(id, nom, actif, admin_email, cc_email, logo_data, modeles)").eq("user_id", ME.user.id).maybeSingle();
   if (error) { showAuth("a-off"); $("a-offTxt").textContent = "Impossible de charger ton compte : " + error.message; return; }
   if (!data || !data.entreprises) { showAuth("a-wait"); $("a-waitMail").textContent = ME.user.email; return; }
   ME.membre = data; ME.entreprise = data.entreprises;
   $("authView").hidden = true; $("appView").hidden = false;
-  if (S.company === "Mon entreprise") { S.company = ME.entreprise.nom; store.set("bat.company", S.company); $("s-company").value = S.company; }
+  await appliquerEntreprise();
   $("companyLabel").textContent = `${ME.entreprise.nom} · ${ROLES[data.role]}`;
   $("tab-equipe").hidden = !peut.admin();
   $("tab-rapport").hidden = !peut.rapport();
@@ -1252,6 +1256,36 @@ $("ch-create").addEventListener("click", async () => {
     C.ouvert = data.id; toast("Chantier créé"); await chargerChantiers(); $("chDetail").scrollIntoView({ block: "start" });
   } finally { b.disabled = false; }
 });
+
+/* --- Réglages de l'entreprise (en ligne, communs à toute l'équipe) --- */
+async function appliquerEntreprise(){
+  const e = ME.entreprise, admin = peut.admin();
+  if (admin) {
+    // Première fois : l'admin met en ligne les réglages déjà présents sur son appareil
+    const maj = {};
+    if (!e.admin_email && S.admin) maj.admin_email = S.admin;
+    if (!e.cc_email && S.cc) maj.cc_email = S.cc;
+    if (!e.logo_data && S.logo) maj.logo_data = S.logo;
+    if ((!Array.isArray(e.modeles) || !e.modeles.length) && custom.length) maj.modeles = custom;
+    if (Object.keys(maj).length) {
+      const { error } = await sb.from("entreprises").update(maj).eq("id", ME.membre.entreprise_id);
+      if (!error) { Object.assign(e, maj); toast("Tes réglages ont été mis en ligne pour toute l'équipe"); }
+    }
+  }
+  S.company = e.nom || S.company; S.admin = e.admin_email || ""; S.cc = e.cc_email || "";
+  S.logo = e.logo_data || null; custom = Array.isArray(e.modeles) ? e.modeles : [];
+  $("s-company").value = S.company; $("s-admin").value = S.admin; $("s-cc").value = S.cc;
+  renderCompany(); renderModelList(); renderModelSelect(); updateSendHint();
+  $("view-reglages").classList.toggle("lecture", !admin);
+  ["s-company", "s-admin", "s-cc", "s-logo"].forEach(id => $(id).disabled = !admin);
+  $("reglagesInfo").hidden = admin;
+}
+async function sauverEntreprise(maj, ok){
+  if (!ME.membre || !peut.admin()) { toast("Seul l'admin de l'entreprise peut changer ce réglage."); return false; }
+  const { error } = await sb.from("entreprises").update(maj).eq("id", ME.membre.entreprise_id);
+  if (error) { toast("Pas enregistré en ligne : " + error.message); return false; }
+  Object.assign(ME.entreprise, maj); if (ok) toast(ok); return true;
+}
 
 /* --- Appel à Make via le relais sécurisé (Supabase) --- */
 async function appelMake(action, fd, signal){
