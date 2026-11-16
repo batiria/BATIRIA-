@@ -182,6 +182,33 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
 .gal figcaption{font-size:12px;color:var(--muted);line-height:1.35}
 .gal figcaption b{color:var(--ink);font-weight:500}
 .note-txt{white-space:pre-wrap;color:var(--ink);font-size:14px}
+.bell{position:relative;min-height:40px;min-width:40px;border:1px solid #3A3D40;background:transparent;color:#fff;font-size:18px;cursor:pointer}
+.bell b{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--rec);color:#fff;font:700 11px/20px var(--body)}
+.top-r{display:flex;align-items:center;gap:10px}
+.pl-eq{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-top:1px solid var(--line)}
+.pl-eq h3{margin:0;font-family:var(--display);font-size:18px;text-transform:uppercase}
+.pl-day{display:grid;grid-template-columns:72px 1fr;gap:10px;align-items:start}
+.pl-d{font:600 11px var(--mono);letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding-top:12px}
+.pl-day.auj .pl-d{color:var(--accent-text)}
+.slot{width:100%;min-height:46px;text-align:left;padding:8px 12px;border:1px dashed var(--line);background:transparent;color:var(--muted);font:500 13px var(--body);display:flex;flex-direction:column;gap:2px;cursor:pointer}
+div.slot{cursor:default}
+.slot.full{border-style:solid;border-color:var(--accent);background:var(--accent-soft);color:var(--ink)}
+.slot small{font:600 10px var(--mono);letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.slot b{font-weight:600}
+.slot b.muted,.muted{color:var(--muted)}
+.pl-edit{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--accent);background:var(--sunk)}
+.pl-half{display:flex;flex-direction:column;gap:6px}
+.pl-half .pl-d{padding-top:0}
+.pl-half select,.pl-half input{min-height:44px}
+.step{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}
+.step-c{display:flex;align-items:center;gap:10px}
+.step-c b{min-width:52px;text-align:center;font-family:var(--mono)}
+.bars{display:flex;flex-direction:column;gap:10px}
+.bar .row{font-size:13px}
+.track{height:8px;background:var(--sunk);border:1px solid var(--line)}
+.track div{height:100%;background:var(--accent)}
+.chip-x{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:0 0 0 6px;font-size:13px}
+#notifPanel{margin-bottom:16px}
 .pin-links{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
 </style>
 </head>
@@ -189,7 +216,7 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
 <div class="testbar">Version test · comptes et chantiers</div>
 <header class="top"><div class="in">
   <div class="brand"><i aria-hidden="true"></i>Batiria</div>
-  <div class="company" id="companyLabel"></div>
+  <div class="top-r"><div class="company" id="companyLabel"></div><button type="button" class="bell" id="notifBtn" hidden aria-label="Notifications">🔔<b id="notifNb" hidden></b></button></div>
 </div></header>
 <div class="wrap" id="authView">
   <div class="auth">
@@ -243,6 +270,7 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
   </div>
   <nav class="tabs" role="tablist" aria-label="Sections">
     <button type="button" role="tab" id="tab-chantiers" aria-selected="true">Chantiers</button>
+    <button type="button" role="tab" id="tab-planning" aria-selected="false">Planning</button>
     <button type="button" role="tab" id="tab-rapport" aria-selected="false">Rapport</button>
     <button type="button" role="tab" id="tab-historique" aria-selected="false">Historique</button>
     <button type="button" role="tab" id="tab-equipe" aria-selected="false" hidden>Équipe</button>
@@ -250,7 +278,9 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
   </nav>
 
   <!-- CHANTIERS -->
+  <div class="panel" id="notifPanel" hidden></div>
   <section class="view" id="view-chantiers">
+    <div class="panel" id="jourPanel" hidden></div>
     <div class="panel">
       <div class="row"><h2>Mes chantiers</h2><span class="pill" id="chCount"></span></div>
       <div class="list" id="chList"><div class="empty">Chargement…</div></div>
@@ -264,6 +294,23 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
       <button type="button" class="btn primary" id="ch-create">Créer le chantier</button>
       <div class="hint">Tu es affecté automatiquement au chantier que tu crées.</div>
     </div>
+  </section>
+
+  <!-- PLANNING -->
+  <section class="view" id="view-planning" hidden>
+    <div class="panel">
+      <div class="tag"><b>→</b>Planning des équipes</div>
+      <div class="row"><h2 id="plTitre">Planning</h2></div>
+      <div class="btns"><button type="button" class="btn small" data-pl="prev" aria-label="Semaine précédente">‹ Précédente</button><button type="button" class="btn small" data-pl="now">Cette semaine</button><button type="button" class="btn small" data-pl="next" aria-label="Semaine suivante">Suivante ›</button></div>
+      <div class="hint" id="plLecture" hidden>Planning en lecture seule : c'est ton conducteur de travaux qui le prépare.</div>
+      <div id="plGrid"><div class="empty">Chargement…</div></div>
+    </div>
+    <div class="panel" id="plEquipes" hidden>
+      <h2>Équipes</h2>
+      <div class="hint">Une équipe = un nom, un chef d'équipe (il reçoit les notifications du planning) et ses compagnons.</div>
+      <div class="list" id="plEqList"></div>
+    </div>
+    <datalist id="dlTaches"></datalist>
   </section>
 
   <!-- RAPPORT -->
@@ -399,6 +446,12 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
       <div class="row"><h2>Modèles clients</h2><button type="button" class="btn dark small" id="newModel">Nouveau</button></div>
       <div class="list" id="modelList"></div>
     </div>
+    <div class="panel">
+      <h2>Tâches pour la saisie des heures</h2>
+      <div class="chips" id="tachesList"></div>
+      <div class="row" id="tachesAdd"><input type="text" id="tacheNew" placeholder="Ajouter une tâche" style="flex:1"><button type="button" class="btn small" id="tacheAddBtn">Ajouter</button></div>
+      <div class="hint">Ces tâches servent à la saisie des heures et à l'analyse des temps, pour toute l'équipe.</div>
+    </div>
     <div class="panel" id="modelEditor" hidden>
       <div class="row"><h2 id="editorTitle">Nouveau modèle</h2><button type="button" class="btn ghost small" id="closeEditor">Fermer</button></div>
       <label class="f">Nom<input type="text" id="m-nom" placeholder="Ex. : Bouygues Bâtiment"></label>
@@ -464,11 +517,12 @@ const S = {
 };
 
 /* ---------- Tabs ---------- */
-const TABS = ["chantiers", "rapport", "historique", "equipe", "reglages"];
+const TABS = ["chantiers", "planning", "rapport", "historique", "equipe", "reglages"];
 TABS.forEach(t => $("tab-" + t).addEventListener("click", () => showTab(t)));
 function showTab(name){
   TABS.forEach(t => { $("tab-" + t).setAttribute("aria-selected", String(t === name)); $("view-" + t).hidden = t !== name; });
-  if (name === "chantiers" && ME.membre) chargerChantiers();
+  if (name === "chantiers" && ME.membre) { chargerChantiers(); renderAujourdhui(); }
+  if (name === "planning" && ME.membre) chargerPlanning();
   if (name === "equipe" && ME.membre) chargerEquipe();
   if (name === "rapport") renderBanner();
   if (name === "historique") renderHistory();
@@ -1058,6 +1112,7 @@ $("a-token").addEventListener("keydown", (e) => { if (e.key === "Enter") $("a-ve
 $("a-back").addEventListener("click", () => authStep("a-email"));
 $("a-retry").addEventListener("click", () => location.reload());
 async function deconnecter(msg){
+  clearInterval(N.timer); $("notifBtn").hidden = true; $("notifPanel").hidden = true;
   clearTimeout(PIN.timer); PIN.fin = null; PIN.change = false;
   try { await sb.rpc("verrouiller"); } catch {}
   try { await sb.auth.signOut(); } catch {}
@@ -1155,7 +1210,7 @@ async function ouvrirApp(fin){
   PIN.timer = setTimeout(() => verrouillerLocal(), Math.max(1000, Math.min(PIN.fin - Date.now(), 2147000000)));
   if (PIN.change && ME.membre) { PIN.change = false; $("authView").hidden = true; $("appView").hidden = false; return; }
   PIN.change = false;
-  const { data, error } = await sb.from("membres").select("user_id, role, nom, email, entreprise_id, entreprises(id, nom, actif, admin_email, cc_email, logo_data, modeles)").eq("user_id", ME.user.id).maybeSingle();
+  const { data, error } = await sb.from("membres").select("user_id, role, nom, email, entreprise_id, entreprises(id, nom, actif, admin_email, cc_email, logo_data, modeles, taches)").eq("user_id", ME.user.id).maybeSingle();
   if (error) { showAuth("a-off"); $("a-offTxt").textContent = "Impossible de charger ton compte : " + error.message; return; }
   if (!data || !data.entreprises) { showAuth("a-wait"); $("a-waitMail").textContent = ME.user.email; return; }
   ME.membre = data; ME.entreprise = data.entreprises;
@@ -1166,6 +1221,8 @@ async function ouvrirApp(fin){
   $("tab-rapport").hidden = !peut.rapport();
   $("chNew").hidden = !peut.creer();
   renderCompte();
+  chargerEquipes();
+  demarrerNotifs();
   showTab("chantiers");
 }
 if (sb) sb.auth.onAuthStateChange((evt) => { if (evt === "SIGNED_OUT" && $("a-email").hidden && $("a-code").hidden) setTimeout(() => { if ($("a-email").hidden && $("a-code").hidden) showAuth("a-email"); }, 0); });
@@ -1213,13 +1270,14 @@ async function renderDetail(){
   h += `<div class="tag" style="margin-top:6px"><b>02</b>Dossier du chantier</div>
     <div class="seg">${[["plans", "Plans & détails"], ["photos", "Photos"], ["notes", "Notes"]].map(([k, v]) => `<button type="button" data-act="dtab" data-t="${k}" aria-pressed="${C.dosTab === k}">${v}</button>`).join("")}</div>
     <div id="cdDossier"><div class="empty">Chargement…</div></div>`;
-  h += `<div class="tag" style="margin-top:6px"><b>03</b>Rapports du chantier</div><div class="list" id="cdRapports"><div class="empty">Chargement…</div></div>`;
+  h += `<div class="tag" style="margin-top:6px"><b>03</b>Heures par tâche</div><div id="cdHeures"><div class="empty">Chargement…</div></div>`;
+  h += `<div class="tag" style="margin-top:6px"><b>04</b>Rapports du chantier</div><div class="list" id="cdRapports"><div class="empty">Chargement…</div></div>`;
   const btns = [];
   if (peut.rapport()) btns.push(`<button type="button" class="btn primary" data-act="rapport" data-id="${c.id}">Faire un rapport vocal</button>`);
   if (peut.admin()) btns.push(`<button type="button" class="btn ghost" data-act="suppr" data-id="${c.id}">${C.confirm === "ch:" + c.id ? "Confirmer la suppression" : "Supprimer le chantier"}</button>`);
   if (btns.length) h += `<div class="btns">${btns.join("")}</div>`;
   box.innerHTML = h; box.hidden = false;
-  chargerDossier(c);
+  chargerDossier(c); chargerHeures(c);
   const { data, error } = await sb.from("rapports").select("id, numero, date_rapport, auteur, envoye_at, contenu").eq("chantier_id", c.id).order("created_at", { ascending: false });
   const rb = $("cdRapports"); if (!rb || C.ouvert !== c.id) return;
   C.rapports = data || [];
@@ -1255,6 +1313,7 @@ $("view-chantiers").addEventListener("click", async (e) => {
   }
   else if (act === "dtab") { C.dosTab = b.dataset.t; C.confirm = null; document.querySelectorAll('[data-act="dtab"]').forEach(x => x.setAttribute("aria-pressed", String(x.dataset.t === C.dosTab))); renderDossier(); }
   else if (act === "fopen") ouvrirFichier(id);
+  else if (act.startsWith("h") && ["hSaisir", "hAnnuler", "hMbr", "hAddMbr", "hStep", "hEnvoyer", "hValider", "hSuppr"].includes(act)) actionHeures(act, b);
   else if (act === "fsuppr") supprimerFichier(id);
   else if (act === "fchoisir") $(b.dataset.input)?.click();
   else if (act === "noteAdd") ajouterNote();
@@ -1294,6 +1353,7 @@ async function appliquerEntreprise(){
   }
   S.company = e.nom || S.company; S.admin = e.admin_email || ""; S.cc = e.cc_email || "";
   S.logo = e.logo_data || null; custom = Array.isArray(e.modeles) ? e.modeles : [];
+  TACHES = Array.isArray(e.taches) ? e.taches : []; renderTaches();
   $("s-company").value = S.company; $("s-admin").value = S.admin; $("s-cc").value = S.cc;
   renderCompany(); renderModelList(); renderModelSelect(); updateSendHint();
   $("view-reglages").classList.toggle("lecture", !admin);
@@ -1306,6 +1366,284 @@ async function sauverEntreprise(maj, ok){
   if (error) { toast("Pas enregistré en ligne : " + error.message); return false; }
   Object.assign(ME.entreprise, maj); if (ok) toast(ok); return true;
 }
+
+/* --- Tâches, équipes, planning, notifications, heures --- */
+let TACHES = [];
+const JOURS = ["Lun", "Mar", "Mer", "Jeu", "Ven"];
+const MOMENTS = { journee: "Journée", matin: "Matin", apres_midi: "Après-midi" };
+const isoJour = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const lundiDe = (d) => { const x = new Date(d); x.setHours(12, 0, 0, 0); const k = (x.getDay() + 6) % 7; x.setDate(x.getDate() - k); return x; };
+const plusJours = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const frJour = (iso) => { const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}` : iso; };
+const fh = (h) => (Math.round(h * 10) / 10).toString().replace(".", ",") + " h";
+const planifie = () => ["admin", "conducteur"].includes(ME.membre?.role);
+const P = { lundi: lundiDe(new Date()), rows: [], equipes: [], edit: null, split: false, eqEdit: null };
+
+async function chargerEquipes(){
+  const { data, error } = await sb.from("equipes").select("*").order("nom");
+  if (!error) P.equipes = data || [];
+  return P.equipes;
+}
+
+/* Planning */
+async function chargerPlanning(){
+  const fin = plusJours(P.lundi, 4);
+  await Promise.all([chargerEquipes(), C.chantiers.length ? null : chargerChantiers()]);
+  const { data, error } = await sb.from("planning").select("*").gte("jour", isoJour(P.lundi)).lte("jour", isoJour(fin));
+  if (error) toast("Planning indisponible : " + error.message);
+  P.rows = data || [];
+  renderPlanning();
+}
+function celluleTexte(eqId, jour){
+  const r = (m) => P.rows.find(x => x.equipe_id === eqId && x.jour === jour && x.moment === m);
+  const j = r("journee"), am = r("matin"), pm = r("apres_midi");
+  const lib = (x) => x ? `<b>${esc(x.chantier_nom || "Libre")}</b>${x.tache ? `<small>${esc(x.tache)}</small>` : ""}` : `<b class="muted">Libre</b>`;
+  if (am || pm) return `<small>Matin</small>${lib(am)}<small>Après-midi</small>${lib(pm)}`;
+  if (j) return `${lib(j)}`;
+  return null;
+}
+function renderPlanning(){
+  const fin = plusJours(P.lundi, 4), auj = isoJour(new Date());
+  $("plTitre").textContent = `Semaine du ${frJour(isoJour(P.lundi))} au ${frJour(isoJour(fin))}`;
+  $("plLecture").hidden = planifie();
+  $("plEquipes").hidden = !planifie();
+  const box = $("plGrid");
+  if (!P.equipes.length) { box.innerHTML = `<div class="empty">${planifie() ? "Aucune équipe pour l'instant. Crée ta première équipe ci-dessous." : "Aucune équipe pour l'instant."}</div>`; renderEquipesPl(); return; }
+  box.innerHTML = P.equipes.map(e => {
+    let h = `<div class="pl-eq"><div class="row"><h3>${esc(e.nom)}</h3><span class="hint">${esc([e.chef_id ? "Chef : " + nomDe(e.chef_id) : "", (e.membres || []).join(", ")].filter(Boolean).join(" · "))}</span></div>`;
+    for (let i = 0; i < 5; i++) {
+      const jour = isoJour(plusJours(P.lundi, i)), key = e.id + "|" + jour, txt = celluleTexte(e.id, jour);
+      h += `<div class="pl-day${jour === auj ? " auj" : ""}"><span class="pl-d">${JOURS[i]} ${frJour(jour)}</span><div>`;
+      if (P.edit === key && planifie()) h += editeurCellule(e.id, jour);
+      else if (planifie()) h += `<button type="button" class="slot${txt ? " full" : ""}" data-pl="edit" data-k="${key}">${txt || "+ Affecter"}</button>`;
+      else h += `<div class="slot${txt ? " full" : ""}">${txt || "Libre"}</div>`;
+      h += `</div></div>`;
+    }
+    return h + `</div>`;
+  }).join("");
+  renderEquipesPl();
+}
+function editeurCellule(eqId, jour){
+  const r = (m) => P.rows.find(x => x.equipe_id === eqId && x.jour === jour && x.moment === m) || {};
+  const chs = C.chantiers;
+  const sel = (id, cur) => `<select id="${id}" aria-label="Chantier"><option value="">Libre</option>${chs.map(c => `<option value="${c.id}"${c.id === cur ? " selected" : ""}>${esc(c.nom)}</option>`).join("")}</select>`;
+  const demi = (titre, x, pre) => `<div class="pl-half"><span class="pl-d">${titre}</span>${sel(pre + "c", x.chantier_id)}<input type="text" id="${pre}t" list="dlTaches" placeholder="Tâche prévue (facultatif)" value="${esc(x.tache || "")}"></div>`;
+  const j = r("journee"), am = r("matin"), pm = r("apres_midi");
+  const h = P.split ? demi("Matin", am.chantier_id || am.tache ? am : j, "pe-am") + demi("Après-midi", pm, "pe-pm") : demi("Journée entière", j.chantier_id || j.tache ? j : am, "pe-am");
+  return `<div class="pl-edit">${h}<div class="btns"><button type="button" class="btn primary small" data-pl="save">Enregistrer</button><button type="button" class="btn small" data-pl="split">${P.split ? "Journée entière" : "Couper ½ journée"}</button><button type="button" class="btn ghost small" data-pl="vider">Vider</button><button type="button" class="btn ghost small" data-pl="fermer">Fermer</button></div></div>`;
+}
+async function enregistrerCellule(vider){
+  const [eqId, jour] = P.edit.split("|");
+  const val = (pre) => ({ c: $(pre + "c")?.value || null, t: ($(pre + "t")?.value || "").trim() || null });
+  const parts = vider ? [] : (P.split ? [["matin", val("pe-am")], ["apres_midi", val("pe-pm")]] : [["journee", val("pe-am")]]);
+  const garder = parts.filter(([, v]) => v.c || v.t);
+  const enlever = ["journee", "matin", "apres_midi"].filter(m => !garder.some(([g]) => g === m));
+  if (enlever.length) {
+    const { error } = await sb.from("planning").delete().eq("equipe_id", eqId).eq("jour", jour).in("moment", enlever);
+    if (error) return toast("Planning non enregistré : " + error.message);
+  }
+  if (garder.length) {
+    const { error } = await sb.from("planning").upsert(garder.map(([m, v]) => ({ equipe_id: eqId, jour, moment: m, chantier_id: v.c, tache: v.t })), { onConflict: "equipe_id,jour,moment" });
+    if (error) return toast("Planning non enregistré : " + error.message);
+  }
+  const eq = P.equipes.find(e => e.id === eqId);
+  toast(vider ? "Journée vidée" : eq?.chef_id ? "Planning enregistré · le chef d'équipe est prévenu" : "Planning enregistré");
+  P.edit = null; chargerPlanning();
+}
+$("view-planning").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-pl]"); if (!b) return;
+  const a = b.dataset.pl;
+  if (a === "prev") { P.lundi = plusJours(P.lundi, -7); P.edit = null; chargerPlanning(); }
+  else if (a === "next") { P.lundi = plusJours(P.lundi, 7); P.edit = null; chargerPlanning(); }
+  else if (a === "now") { P.lundi = lundiDe(new Date()); P.edit = null; chargerPlanning(); }
+  else if (a === "edit") { P.edit = b.dataset.k; const [eqId, jour] = P.edit.split("|"); P.split = P.rows.some(x => x.equipe_id === eqId && x.jour === jour && x.moment !== "journee"); renderPlanning(); }
+  else if (a === "split") { P.split = !P.split; renderPlanning(); }
+  else if (a === "fermer") { P.edit = null; renderPlanning(); }
+  else if (a === "save") enregistrerCellule(false);
+  else if (a === "vider") enregistrerCellule(true);
+  else if (a === "eqEdit") { P.eqEdit = b.dataset.id; renderEquipesPl(); }
+  else if (a === "eqAnnuler") { P.eqEdit = null; renderEquipesPl(); }
+  else if (a === "eqSave") sauverEquipe(b.dataset.id || null);
+  else if (a === "eqSuppr") {
+    if (b.dataset.confirm !== "1") { b.dataset.confirm = "1"; b.textContent = "Confirmer"; return; }
+    const { error } = await sb.from("equipes").delete().eq("id", b.dataset.id);
+    if (error) return toast("Suppression impossible : " + error.message);
+    P.eqEdit = null; toast("Équipe supprimée"); chargerPlanning();
+  }
+});
+
+/* Équipes (dans l'onglet Planning, pour l'admin et les conducteurs) */
+function formEquipe(e){
+  const id = e?.id || "new";
+  const chefs = C.membres.filter(m => m.actif);
+  return `<div class="pl-edit"><label class="f">Nom de l'équipe<input type="text" id="eqn-${id}" value="${esc(e?.nom || "")}" placeholder="Ex. : Équipe Paul"></label>
+    <label class="f">Chef d'équipe (reçoit les notifications)<select id="eqc-${id}"><option value="">Aucun</option>${chefs.map(m => `<option value="${m.user_id}"${m.user_id === e?.chef_id ? " selected" : ""}>${esc(m.nom || m.email)} · ${esc(ROLES[m.role].split(" ")[0])}</option>`).join("")}</select></label>
+    <label class="f">Compagnons (séparés par des virgules)<input type="text" id="eqm-${id}" value="${esc((e?.membres || []).join(", "))}" placeholder="Ex. : Ali, Kevin, Hugo"></label>
+    <div class="btns"><button type="button" class="btn primary small" data-pl="eqSave" data-id="${e?.id || ""}">${e ? "Enregistrer" : "Créer l'équipe"}</button>${e ? `<button type="button" class="btn ghost small" data-pl="eqAnnuler">Annuler</button><button type="button" class="btn ghost small" data-pl="eqSuppr" data-id="${e.id}">Supprimer</button>` : ""}</div></div>`;
+}
+function renderEquipesPl(){
+  const box = $("plEqList"); if (!box || !planifie()) return;
+  box.innerHTML = P.equipes.map(e => P.eqEdit === e.id ? formEquipe(e)
+    : `<div class="item"><div class="l"><strong>${esc(e.nom)}</strong><span>${esc([e.chef_id ? "Chef : " + nomDe(e.chef_id) : "Pas de chef désigné", (e.membres || []).join(", ")].filter(Boolean).join(" · "))}</span></div><div class="r"><button type="button" class="btn small" data-pl="eqEdit" data-id="${e.id}">Modifier</button></div></div>`).join("")
+    + `<div class="tag" style="margin-top:8px"><b>+</b>Nouvelle équipe</div>` + formEquipe(null);
+}
+async function sauverEquipe(id){
+  const k = id || "new", nom = $("eqn-" + k).value.trim();
+  if (!nom) return toast("Donne un nom à l'équipe.");
+  const row = { nom, chef_id: $("eqc-" + k).value || null, membres: $("eqm-" + k).value.split(",").map(s => s.trim()).filter(Boolean) };
+  const { error } = id ? await sb.from("equipes").update(row).eq("id", id) : await sb.from("equipes").insert(row);
+  if (error) return toast("Équipe non enregistrée : " + error.message);
+  P.eqEdit = null; toast(id ? "Équipe enregistrée" : "Équipe créée"); chargerPlanning();
+}
+
+/* « Aujourd'hui » : où va mon équipe */
+async function renderAujourdhui(){
+  const box = $("jourPanel"); if (!box || !ME.membre) return;
+  await chargerEquipes();
+  const mes = P.equipes.filter(e => e.chef_id === ME.user.id);
+  if (!mes.length) { box.hidden = true; return; }
+  const auj = isoJour(new Date());
+  const { data } = await sb.from("planning").select("*").eq("jour", auj).in("equipe_id", mes.map(e => e.id));
+  const rows = data || [];
+  box.innerHTML = `<div class="tag"><b>→</b>Aujourd'hui · ${frJour(auj)}</div>` + mes.map(e => {
+    const r = rows.filter(x => x.equipe_id === e.id).sort((a, b) => a.moment.localeCompare(b.moment));
+    return `<div class="item"><div class="l"><strong>${esc(e.nom)}</strong><span>${r.length ? r.map(x => `${MOMENTS[x.moment]} : ${esc(x.chantier_nom || "Libre")}${x.tache ? " — " + esc(x.tache) : ""}`).join(" · ") : "Rien de prévu aujourd'hui."}</span></div></div>`;
+  }).join("");
+  box.hidden = false;
+}
+
+/* Notifications */
+const N = { liste: [], timer: null };
+async function chargerNotifs(){
+  if (!ME.membre) return;
+  const { data, error } = await sb.from("notifications").select("*").order("created_at", { ascending: false }).limit(30);
+  if (error) return;
+  N.liste = data || [];
+  const nb = N.liste.filter(n => !n.lu).length;
+  $("notifBtn").hidden = false; $("notifNb").hidden = !nb; $("notifNb").textContent = nb > 9 ? "9+" : nb;
+  if (!$("notifPanel").hidden) renderNotifs();
+}
+function renderNotifs(){
+  $("notifPanel").innerHTML = `<div class="row"><div class="tag"><b>→</b>Notifications</div><button type="button" class="btn ghost small" data-notif="fermer">Fermer</button></div>`
+    + (N.liste.length ? `<div class="list">${N.liste.map(n => `<div class="item"><div class="l"><strong${n.lu ? ' class="muted"' : ""}>${esc(n.texte)}</strong><span>${esc(dateCourte(n.created_at))}</span></div></div>`).join("")}</div>` : `<div class="empty">Aucune notification.</div>`);
+}
+$("notifBtn").addEventListener("click", async () => {
+  const p = $("notifPanel"); p.hidden = !p.hidden;
+  if (!p.hidden) {
+    renderNotifs(); window.scrollTo(0, 0);
+    const ids = N.liste.filter(n => !n.lu).map(n => n.id);
+    if (ids.length) { await sb.from("notifications").update({ lu: true }).in("id", ids); N.liste.forEach(n => n.lu = true); $("notifNb").hidden = true; }
+  }
+});
+$("notifPanel").addEventListener("click", (e) => { if (e.target.closest('[data-notif="fermer"]')) $("notifPanel").hidden = true; });
+function demarrerNotifs(){ clearInterval(N.timer); chargerNotifs(); N.timer = setInterval(chargerNotifs, 60000); }
+document.addEventListener("visibilitychange", () => { if (!document.hidden && ME.membre) chargerNotifs(); });
+
+/* Tâches (Réglages, admin) */
+function renderTaches(){
+  const box = $("tachesList"); if (!box) return;
+  const admin = peut.admin();
+  box.innerHTML = TACHES.map((t, i) => `<span class="chip" aria-pressed="false">${esc(t)}${admin ? ` <button type="button" class="chip-x" data-tache-x="${i}" aria-label="Retirer ${esc(t)}">✕</button>` : ""}</span>`).join("");
+  $("tachesAdd").hidden = !admin;
+  $("dlTaches").innerHTML = TACHES.map(t => `<option value="${esc(t)}">`).join("");
+}
+$("tachesList").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-tache-x]"); if (!b) return;
+  const t = TACHES.slice(); t.splice(Number(b.dataset.tacheX), 1); TACHES = t; renderTaches();
+  sauverEntreprise({ taches: TACHES }, "Tâche retirée");
+});
+$("tacheAddBtn").addEventListener("click", () => {
+  const v = $("tacheNew").value.trim(); if (!v) return;
+  if (TACHES.includes(v)) return toast("Cette tâche existe déjà.");
+  TACHES = TACHES.concat(v); $("tacheNew").value = ""; renderTaches();
+  sauverEntreprise({ taches: TACHES }, "Tâche ajoutée");
+});
+
+/* Heures (dans le dossier chantier) */
+const H = { liste: [], draft: null };
+async function chargerHeures(c){
+  const { data, error } = await sb.from("journees").select("*").eq("chantier_id", c.id).order("jour", { ascending: false }).order("created_at", { ascending: false });
+  if (C.ouvert !== c.id) return;
+  if (error) { const box = $("cdHeures"); if (box) box.innerHTML = `<div class="empty">Heures indisponibles : ${esc(error.message)}</div>`; return; }
+  H.liste = data || [];
+  renderHeures();
+}
+const totalJournee = (j) => (j.lignes || []).reduce((s, l) => s + (Number(l.h) || 0), 0) * Math.max(1, (j.equipe || []).length);
+function renderHeures(){
+  const box = $("cdHeures"), c = C.chantiers.find(x => x.id === C.ouvert); if (!box || !c) return;
+  let h = "";
+  if (H.draft && H.draft.chantier === c.id) h += formHeures(c);
+  else if (peut.rapport()) h += `<button type="button" class="btn primary" data-act="hSaisir">Saisir une journée</button>`;
+  const parTache = {};
+  H.liste.forEach(j => { const n = Math.max(1, (j.equipe || []).length); (j.lignes || []).forEach(l => { parTache[l.tache] = (parTache[l.tache] || 0) + (Number(l.h) || 0) * n; }); });
+  const ents = Object.entries(parTache).sort((a, b) => b[1] - a[1]), max = Math.max(1, ...ents.map(x => x[1]));
+  if (ents.length) h += `<div class="bars">${ents.map(([t, v]) => `<div class="bar"><div class="row"><span>${esc(t)}</span><b>${fh(v)}</b></div><div class="track"><div style="width:${(v / max * 100).toFixed(1)}%"></div></div></div>`).join("")}<div class="hint">Total : <b>${fh(ents.reduce((s, x) => s + x[1], 0))}</b> (heures × nombre de personnes)</div></div>`;
+  h += H.liste.length ? `<div class="list">${H.liste.map(j => {
+    const val = j.statut === "valide", peutSuppr = gere(c) || (j.auteur === ME.user.id && !val);
+    return `<div class="item"><div class="l"><strong>${esc(frDate(j.jour))} · ${fh(totalJournee(j))} <span class="pill${val ? " ok" : ""}">${val ? "Validée" : "À valider"}</span></strong><span>${esc((j.equipe || []).join(", ") || "—")} · ${esc((j.lignes || []).map(l => `${l.tache} ${fh(Number(l.h) || 0)}`).join(", "))}${j.note ? " · " + esc(j.note) : ""}</span><span>par ${esc(nomDe(j.auteur))}</span></div><div class="r">${!val && gere(c) ? `<button type="button" class="btn small" data-act="hValider" data-id="${j.id}">Valider</button>` : ""}${peutSuppr ? `<button type="button" class="btn ghost small" data-act="hSuppr" data-id="${j.id}">${C.confirm === "h:" + j.id ? "Confirmer" : "Supprimer"}</button>` : ""}</div></div>`;
+  }).join("")}</div>` : `<div class="empty">Aucune heure saisie sur ce chantier.</div>`;
+  box.innerHTML = h;
+}
+function formHeures(c){
+  const d = H.draft;
+  const proposes = Array.from(new Set([...(P.equipes.find(e => e.id === d.equipeId)?.membres || []), ...d.equipe]));
+  return `<div class="dos-add">
+    <div class="grid2"><label class="f">Date<input type="date" id="hDate" value="${esc(d.jour)}"></label>
+    <label class="f">Équipe<select id="hEquipe"><option value="">Choisir…</option>${P.equipes.map(e => `<option value="${e.id}"${e.id === d.equipeId ? " selected" : ""}>${esc(e.nom)}</option>`).join("")}</select></label></div>
+    <div class="f">Présents (${d.equipe.length})</div>
+    <div class="chips">${proposes.map(n => `<button type="button" class="chip" data-act="hMbr" data-n="${esc(n)}" aria-pressed="${d.equipe.includes(n)}">${esc(n)}</button>`).join("") || `<span class="hint">Choisis une équipe ou ajoute des noms.</span>`}</div>
+    <div class="row"><input type="text" id="hAutre" placeholder="Ajouter une personne" style="flex:1"><button type="button" class="btn small" data-act="hAddMbr">Ajouter</button></div>
+    <div class="f">Heures par personne</div>
+    ${TACHES.map(t => { const v = d.h[t] || 0; return `<div class="step"><span>${esc(t)}</span><span class="step-c"><button type="button" class="btn small" data-act="hStep" data-t="${esc(t)}" data-d="-0.5" aria-label="Moins">−</button><b>${fh(v)}</b><button type="button" class="btn small" data-act="hStep" data-t="${esc(t)}" data-d="0.5" aria-label="Plus">+</button></span></div>`; }).join("")}
+    <label class="f">Note (facultatif)<textarea id="hNote" rows="2">${esc(d.note || "")}</textarea></label>
+    <div class="hint">Total : <b>${fh(Object.values(d.h).reduce((s, v) => s + v, 0) * Math.max(1, d.equipe.length))}</b></div>
+    <div class="btns"><button type="button" class="btn primary" data-act="hEnvoyer">Envoyer la journée</button><button type="button" class="btn ghost" data-act="hAnnuler">Annuler</button></div></div>`;
+}
+async function actionHeures(act, b){
+  const c = C.chantiers.find(x => x.id === C.ouvert); if (!c) return;
+  const d = H.draft;
+  if (d) { d.note = $("hNote")?.value ?? d.note; d.jour = $("hDate")?.value || d.jour; }
+  if (act === "hSaisir") {
+    await chargerEquipes();
+    const mien = P.equipes.find(e => e.chef_id === ME.user.id);
+    H.draft = { chantier: c.id, jour: isoJour(new Date()), equipeId: mien?.id || "", equipe: (mien?.membres || []).slice(), h: {}, note: "" };
+    if (ME.membre.nom && !H.draft.equipe.includes(ME.membre.nom) && mien) H.draft.equipe.unshift(ME.membre.nom);
+  }
+  else if (act === "hAnnuler") H.draft = null;
+  else if (act === "hMbr") { const n = b.dataset.n; d.equipe = d.equipe.includes(n) ? d.equipe.filter(x => x !== n) : d.equipe.concat(n); }
+  else if (act === "hAddMbr") { const n = $("hAutre").value.trim(); if (n && !d.equipe.includes(n)) d.equipe.push(n); }
+  else if (act === "hStep") { const t = b.dataset.t; d.h[t] = Math.max(0, Math.min(14, (d.h[t] || 0) + Number(b.dataset.d))); if (!d.h[t]) delete d.h[t]; }
+  else if (act === "hEnvoyer") {
+    if (!d.equipe.length) return toast("Coche au moins une personne présente.");
+    const lignes = TACHES.filter(t => d.h[t]).map(t => ({ tache: t, h: d.h[t] }));
+    if (!lignes.length) return toast("Ajoute des heures sur au moins une tâche.");
+    const { error } = await sb.from("journees").insert({ chantier_id: c.id, jour: d.jour, equipe: d.equipe, lignes, note: d.note.trim() || null });
+    if (error) return toast("Journée non enregistrée : " + error.message);
+    H.draft = null; toast("Journée envoyée au conducteur"); return chargerHeures(c);
+  }
+  else if (act === "hValider") {
+    const { error } = await sb.from("journees").update({ statut: "valide" }).eq("id", b.dataset.id);
+    if (error) return toast("Validation impossible : " + error.message);
+    toast("Journée validée"); return chargerHeures(c);
+  }
+  else if (act === "hSuppr") {
+    const id = b.dataset.id;
+    if (C.confirm !== "h:" + id) { C.confirm = "h:" + id; return renderHeures(); }
+    C.confirm = null;
+    const { error } = await sb.from("journees").delete().eq("id", id);
+    if (error) return toast("Suppression impossible : " + error.message);
+    toast("Journée supprimée"); return chargerHeures(c);
+  }
+  renderHeures();
+}
+$("view-chantiers").addEventListener("change", (e) => {
+  if (e.target.id === "hEquipe" && H.draft) {
+    H.draft.note = $("hNote")?.value ?? H.draft.note; H.draft.jour = $("hDate")?.value || H.draft.jour;
+    H.draft.equipeId = e.target.value; const eq = P.equipes.find(x => x.id === e.target.value);
+    H.draft.equipe = (eq?.membres || []).slice(); renderHeures();
+  }
+});
+
 
 /* --- Dossier chantier : plans, détails, photos, notes --- */
 const BUCKET = "chantiers";
