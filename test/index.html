@@ -1257,7 +1257,19 @@ $("ch-create").addEventListener("click", async () => {
 async function appelMake(action, fd, signal){
   const { data: { session } } = await sb.auth.getSession();
   if (!session) throw { code: "http", status: 401 };
-  return fetch(`${SB_URL}/functions/v1/RELAIS-MAKE-?action=${action}`, { method: "POST", body: fd, signal, headers: { Authorization: "Bearer " + session.access_token, apikey: SB_KEY } });
+  // Noms possibles du relais dans Supabase (le premier qui répond est gardé)
+  const noms = [store.get("bat.relais", null), "RELAIS-MAKE-", "relais-make", "clever-service"].filter((n, i, t) => n && t.indexOf(n) === i);
+  let derniere = null;
+  for (const nom of noms) {
+    try {
+      const res = await fetch(`${SB_URL}/functions/v1/${encodeURIComponent(nom)}?action=${action}`, { method: "POST", body: fd, signal, headers: { Authorization: "Bearer " + session.access_token, apikey: SB_KEY } });
+      if (res.status === 404) { derniere = res; continue; }
+      store.set("bat.relais", nom);
+      return res;
+    } catch (e) { if (e?.name === "AbortError") throw e; derniere = e; }
+  }
+  if (derniere instanceof Response) return derniere;
+  throw derniere || new Error("relais introuvable");
 }
 
 /* --- Rapport rattaché au chantier --- */
