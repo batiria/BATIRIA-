@@ -355,17 +355,16 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
     </div>
     <div class="panel">
       <h2>Connexion à Make</h2>
-      <label class="f">Adresse du webhook<input type="url" id="s-webhook" placeholder="https://hook.eu2.make.com/…" autocomplete="off"></label>
-      <label class="f">Code d'accès<input type="password" id="s-key" autocomplete="off" placeholder="Le même que dans le filtre Make"></label>
-      <div class="hint">Le code d'accès empêche quelqu'un qui trouverait l'adresse d'utiliser ton compte OpenAI.</div>
+      <div class="hint">Gérée par Batiria, en sécurité sur le serveur : rien à régler sur ce téléphone.</div>
+      <input type="hidden" id="s-webhook"><input type="hidden" id="s-key">
     </div>
     <div class="panel">
       <div class="tag"><b>→</b>Envoi automatique</div>
       <h2>Envoi au bureau</h2>
       <label class="f">E-mail de l'admin (destinataire des rapports)<input type="text" inputmode="email" id="s-admin" autocomplete="off" placeholder="bureau@monentreprise.fr"></label>
       <label class="f">Copie à (optionnel)<input type="text" inputmode="email" id="s-cc" autocomplete="off" placeholder="conducteur@monentreprise.fr"></label>
-      <label class="f">Adresse du webhook d'envoi<input type="url" id="s-mailhook" autocomplete="off" placeholder="https://hook.eu1.make.com/…"></label>
-      <div class="hint">Le bouton « Envoyer au bureau » envoie le rapport en PDF et en Word à cette adresse, sans rien demander au technicien. Même code d'accès que ci-dessus.</div>
+      <input type="hidden" id="s-mailhook">
+      <div class="hint">Le bouton « Envoyer au bureau » envoie le rapport en PDF et en Word à cette adresse, sans rien demander au technicien.</div>
     </div>
     <div class="panel">
       <h2>Mon entreprise</h2>
@@ -460,7 +459,7 @@ function showTab(name){
   if (name === "rapport") renderBanner();
   if (name === "historique") renderHistory();
   if (name === "reglages") renderModelList();
-  if (name === "rapport") $("setupAlert").hidden = !!S.webhook;
+  if (name === "rapport") $("setupAlert").hidden = true;
 }
 
 /* ---------- Model select ---------- */
@@ -613,19 +612,17 @@ let ctl = null;
 $("generate").addEventListener("click", async () => {
   $("genError").hidden = true;
   const fail = (m) => { $("genError").textContent = m; $("genError").hidden = false; };
-  if (!S.webhook) return fail("Ajoute d'abord l'adresse du webhook Make dans Réglages.");
   if (rec && rec.state === "recording") stopRec();
   if (!S.audio) return fail("Enregistre d'abord ton vocal (gros bouton micro).");
   const choice = S.modelId, extra = [chantierContexte(), $("f-extra").value.trim()].filter(Boolean).join("\n");
   const fd = new FormData();
   fd.append("audio", S.audio, `dictee.${S.audioExt}`);
   fd.append("prompt", buildPrompt(choice, extra, S.photos.map(p => p.caption.trim())));
-  fd.append("cle", S.key || "");
   ctl = new AbortController(); const start = Date.now();
   $("genStatus").hidden = false; $("generate").disabled = true;
   const tk = setInterval(() => { const s = Math.round((Date.now() - start) / 1000); $("genStatusText").textContent = s < 8 ? "Envoi du vocal…" : `Transcription et rédaction… ${s} s`; }, 500);
   try {
-    const res = await fetch(S.webhook, { method: "POST", body: fd, signal: ctl.signal });
+    const res = await appelMake("rapport", fd, ctl.signal);
     const txt = await res.text();
     if (!res.ok) throw { code: "http", status: res.status, txt };
     if (/^\s*accepted\s*$/i.test(txt)) throw { code: "accepted" };
@@ -638,6 +635,7 @@ $("generate").addEventListener("click", async () => {
   } catch (e) {
     if (e?.name === "AbortError") {}
     else if (e?.code === "accepted") fail("Make a répondu « Accepted » : il manque le module « Webhook response » à la fin du scénario, ou le scénario a mis trop de temps.");
+    else if (e?.code === "http" && (e.status === 401 || e.status === 403)) fail("Accès refusé : ton code PIN a peut-être expiré. Recharge la page et retape ton PIN.");
     else if (e?.code === "http") fail(`Make a renvoyé une erreur (${e.status}). Ouvre l'historique du scénario dans Make pour voir quel module a échoué.`);
     else if (e?.code === "invalid_json" || e instanceof SyntaxError) fail("La réponse de l'IA n'était pas au bon format. Relance ; si ça recommence, vérifie le module OpenAI (réponse en JSON).");
     else fail("Impossible de joindre Make. Vérifie ta connexion, l'adresse du webhook, que le scénario est activé et que la réponse contient l'en-tête Access-Control-Allow-Origin.");
@@ -867,8 +865,8 @@ function pdfName(){ const slug = (S.report.infos.chantier || "chantier").normali
 function updateSendHint(){
   const h = $("sendHint"); if (!h) return;
   if (S.meta?.sentTo) h.textContent = `Déjà envoyé à ${S.meta.sentTo} le ${S.meta.sentAt}.`;
-  else if (S.admin && S.mailhook) h.textContent = `Le PDF et le Word partent directement à ${S.admin}${S.cc ? " (copie : " + S.cc + ")" : ""}.`;
-  else h.textContent = "Renseigne l'e-mail de l'admin et le webhook d'envoi dans Réglages pour activer l'envoi.";
+  else if (S.admin) h.textContent = `Le PDF et le Word partent directement à ${S.admin}${S.cc ? " (copie : " + S.cc + ")" : ""}.`;
+  else h.textContent = "Renseigne l'e-mail de l'admin dans Réglages pour activer l'envoi.";
 }
 function saveHistory(quiet){
   const h = store.get("bat.hist", []); const i = h.findIndex(x => x.meta.num === S.meta.num);
@@ -881,7 +879,7 @@ function saveHistory(quiet){
 let sending = false;
 $("sendBtn").addEventListener("click", async () => {
   if (sending || !S.report) return;
-  if (!S.admin || !S.mailhook) { toast("Ajoute l'e-mail de l'admin et le webhook d'envoi dans Réglages."); return showTab("reglages"); }
+  if (!S.admin) { toast("Ajoute l'e-mail de l'admin dans Réglages."); return showTab("reglages"); }
   if (!window.jspdf) return toast("Le générateur PDF n'a pas chargé (connexion ?).");
   if (S.meta.sentTo && $("sendBtn").dataset.confirm !== "1") { $("sendBtn").dataset.confirm = "1"; $("sendBtn").textContent = "Renvoyer quand même ?"; return; }
   sending = true; const btn = $("sendBtn"); btn.disabled = true; btn.textContent = "Envoi en cours…";
@@ -895,8 +893,8 @@ $("sendBtn").addEventListener("click", async () => {
     if (window.JSZip) { const wname = name.replace(/\.pdf$/, ".docx"); fd.append("word", new File([await buildWord()], wname, { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }), wname); }
     fd.append("destinataire", S.admin); fd.append("copie", S.cc || "");
     fd.append("sujet", sujet); fd.append("message", corps); fd.append("texte", reportText());
-    fd.append("entreprise", S.company); fd.append("numero", S.meta.num); fd.append("cle", S.key || "");
-    const res = await fetch(S.mailhook, { method: "POST", body: fd });
+    fd.append("entreprise", S.company); fd.append("numero", S.meta.num);
+    const res = await appelMake("envoi", fd);
     if (!res.ok) throw { status: res.status };
     const d = new Date(); S.meta.sentTo = S.admin; S.meta.sentAt = `${todayFR()} à ${pad(d.getHours())}h${pad(d.getMinutes())}`;
     saveHistory(true); toast(`Rapport envoyé à ${S.admin}`);
@@ -1255,6 +1253,13 @@ $("ch-create").addEventListener("click", async () => {
   } finally { b.disabled = false; }
 });
 
+/* --- Appel à Make via le relais sécurisé (Supabase) --- */
+async function appelMake(action, fd, signal){
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) throw { code: "http", status: 401 };
+  return fetch(`${SB_URL}/functions/v1/relais-make?action=${action}`, { method: "POST", body: fd, signal, headers: { Authorization: "Bearer " + session.access_token, apikey: SB_KEY } });
+}
+
 /* --- Rapport rattaché au chantier --- */
 function choisirChantier(c){ S.chantier = c; showTab("rapport"); window.scrollTo(0, 0); }
 function renderBanner(){
@@ -1334,7 +1339,8 @@ $("eq-invite").addEventListener("click", async () => {
 });
 
 
-renderCompany(); renderModelSelect(); renderPhotos(); $("setupAlert").hidden = !!S.webhook;
+renderCompany(); renderModelSelect(); renderPhotos(); $("setupAlert").hidden = true;
+["bat.webhook", "bat.key", "bat.mailhook"].forEach(k => { try { localStorage.removeItem(k); } catch {} });
 chargerSession();
 })();
 </script>
