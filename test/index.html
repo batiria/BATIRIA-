@@ -1579,8 +1579,8 @@ function renderHeures(){
   const ents = Object.entries(parTache).sort((a, b) => b[1] - a[1]), max = Math.max(1, ...ents.map(x => x[1]));
   if (ents.length) h += `<div class="bars">${ents.map(([t, v]) => `<div class="bar"><div class="row"><span>${esc(t)}</span><b>${fh(v)}</b></div><div class="track"><div style="width:${(v / max * 100).toFixed(1)}%"></div></div></div>`).join("")}<div class="hint">Total : <b>${fh(ents.reduce((s, x) => s + x[1], 0))}</b> (heures × nombre de personnes)</div></div>`;
   h += H.liste.length ? `<div class="list">${H.liste.map(j => {
-    const val = j.statut === "valide", peutSuppr = gere(c) || (j.auteur === ME.user.id && !val);
-    return `<div class="item"><div class="l"><strong>${esc(frDate(j.jour))} · ${fh(totalJournee(j))} <span class="pill${val ? " ok" : ""}">${val ? "Validée" : "À valider"}</span></strong><span>${esc((j.equipe || []).join(", ") || "—")} · ${esc((j.lignes || []).map(l => `${l.tache} ${fh(Number(l.h) || 0)}`).join(", "))}${j.note ? " · " + esc(j.note) : ""}</span><span>par ${esc(nomDe(j.auteur))}</span></div><div class="r">${!val && gere(c) ? `<button type="button" class="btn small" data-act="hValider" data-id="${j.id}">Valider</button>` : ""}${peutSuppr ? `<button type="button" class="btn ghost small" data-act="hSuppr" data-id="${j.id}">${C.confirm === "h:" + j.id ? "Confirmer" : "Supprimer"}</button>` : ""}</div></div>`;
+    const peutSuppr = gere(c) || j.auteur === ME.user.id;
+    return `<div class="item"><div class="l"><strong>${esc(frDate(j.jour))} · ${fh(totalJournee(j))} <span class="pill ok">Validée</span></strong><span>${esc((j.equipe || []).join(", ") || "—")} · ${esc((j.lignes || []).map(l => `${l.tache} ${fh(Number(l.h) || 0)}`).join(", "))}${j.note ? " · " + esc(j.note) : ""}</span><span>saisie et validée par ${esc(nomDe(j.auteur))}</span></div><div class="r">${peutSuppr ? `<button type="button" class="btn ghost small" data-act="hSuppr" data-id="${j.id}">${C.confirm === "h:" + j.id ? "Confirmer" : "Supprimer"}</button>` : ""}</div></div>`;
   }).join("")}</div>` : `<div class="empty">Aucune heure saisie sur ce chantier.</div>`;
   box.innerHTML = h;
 }
@@ -1593,11 +1593,12 @@ function formHeures(c){
     <div class="f">Présents (${d.equipe.length})</div>
     <div class="chips">${proposes.map(n => `<button type="button" class="chip" data-act="hMbr" data-n="${esc(n)}" aria-pressed="${d.equipe.includes(n)}">${esc(n)}</button>`).join("") || `<span class="hint">Choisis une équipe ou ajoute des noms.</span>`}</div>
     <div class="row"><input type="text" id="hAutre" placeholder="Ajouter une personne" style="flex:1"><button type="button" class="btn small" data-act="hAddMbr">Ajouter</button></div>
-    <div class="f">Heures par personne</div>
+    <div class="f">Heures passées sur chaque tâche aujourd'hui (par personne)</div>
+    <div class="hint">Ex. : 3 gars présents, 4 h de pare-vapeur chacun → mets 4 h, l'appli compte 12 h.</div>
     ${TACHES.map(t => { const v = d.h[t] || 0; return `<div class="step"><span>${esc(t)}</span><span class="step-c"><button type="button" class="btn small" data-act="hStep" data-t="${esc(t)}" data-d="-0.5" aria-label="Moins">−</button><b>${fh(v)}</b><button type="button" class="btn small" data-act="hStep" data-t="${esc(t)}" data-d="0.5" aria-label="Plus">+</button></span></div>`; }).join("")}
     <label class="f">Note (facultatif)<textarea id="hNote" rows="2">${esc(d.note || "")}</textarea></label>
     <div class="hint">Total : <b>${fh(Object.values(d.h).reduce((s, v) => s + v, 0) * Math.max(1, d.equipe.length))}</b></div>
-    <div class="btns"><button type="button" class="btn primary" data-act="hEnvoyer">Envoyer la journée</button><button type="button" class="btn ghost" data-act="hAnnuler">Annuler</button></div></div>`;
+    <div class="btns"><button type="button" class="btn primary" data-act="hEnvoyer">Valider la journée</button><button type="button" class="btn ghost" data-act="hAnnuler">Annuler</button></div></div>`;
 }
 async function actionHeures(act, b){
   const c = C.chantiers.find(x => x.id === C.ouvert); if (!c) return;
@@ -1619,7 +1620,7 @@ async function actionHeures(act, b){
     if (!lignes.length) return toast("Ajoute des heures sur au moins une tâche.");
     const { error } = await sb.from("journees").insert({ chantier_id: c.id, jour: d.jour, equipe: d.equipe, lignes, note: d.note.trim() || null });
     if (error) return toast("Journée non enregistrée : " + error.message);
-    H.draft = null; toast("Journée envoyée au conducteur"); return chargerHeures(c);
+    H.draft = null; toast("Journée validée et enregistrée"); return chargerHeures(c);
   }
   else if (act === "hValider") {
     const { error } = await sb.from("journees").update({ statut: "valide" }).eq("id", b.dataset.id);
