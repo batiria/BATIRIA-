@@ -278,6 +278,22 @@ body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
   .gal{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
   #chDetail{max-width:none}
 }
+.qrow{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-top:1px solid var(--line)}
+.qk{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--ink)}
+.qk input{margin-top:3px;width:18px;height:18px}
+.qf{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px}
+.qf > *{min-width:0;width:100%}
+.qf select,.qf input{min-height:42px;font-size:15px!important;padding:8px!important;border:1px solid #D5D9E0;border-radius:10px;background:#fff;color:var(--ink);font-family:var(--body)}
+.tbl-a{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+.tbl-a table{width:100%;border-collapse:collapse;font-size:13px}
+.tbl-a th{text-align:left;background:var(--sunk);font:600 10px var(--mono);letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:8px 10px;white-space:nowrap}
+.tbl-a td{padding:9px 10px;border-top:1px solid var(--line);white-space:nowrap}
+.an-card{display:flex;flex-direction:column;gap:8px;padding:16px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.an-card h3{margin:0;font-family:var(--display);font-size:17px;text-transform:uppercase}
+.an-big{font:800 30px var(--display);color:var(--accent)}
+.an-big small{font:600 14px var(--body);color:var(--muted)}
+#anGrid{display:grid;gap:14px}
+@media (min-width:1000px){#anGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .pin-links{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
 </style>
 </head>
@@ -340,6 +356,7 @@ body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
   <nav class="tabs" role="tablist" aria-label="Sections">
     <button type="button" role="tab" id="tab-chantiers" aria-selected="true">Chantiers</button>
     <button type="button" role="tab" id="tab-planning" aria-selected="false">Planning</button>
+    <button type="button" role="tab" id="tab-analyse" aria-selected="false" hidden>Analyse</button>
     <button type="button" role="tab" id="tab-rapport" aria-selected="false">Rapport</button>
     <button type="button" role="tab" id="tab-historique" aria-selected="false">Historique</button>
     <button type="button" role="tab" id="tab-equipe" aria-selected="false" hidden>Équipe</button>
@@ -382,9 +399,21 @@ body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
     <datalist id="dlTaches"></datalist>
   </section>
 
+  <!-- ANALYSE -->
+  <section class="view" id="view-analyse" hidden>
+    <div class="panel">
+      <div class="tag"><b>→</b>Analyse des temps</div>
+      <h2>Tes temps moyens par tâche</h2>
+      <div class="hint">Calculés à partir des quantités des devis et des heures saisies par les chefs d'équipe, sur tous tes chantiers. Utile pour chiffrer tes prochains devis.</div>
+      <button type="button" class="btn small" id="anMaj">Actualiser</button>
+    </div>
+    <div id="anGrid"></div>
+  </section>
+
   <!-- RAPPORT -->
   <section class="view" id="view-rapport" hidden>
     <div class="banner" id="chBanner" hidden></div>
+    <button type="button" class="back" id="voirHisto">Rapports gardés sur ce téléphone ›</button>
     <div class="alert err" id="setupAlert" hidden>L'appli n'est pas encore reliée à Make. Va dans <strong>Réglages</strong> et colle l'adresse de ton webhook.</div>
 
     <div id="captureBlock" style="display:flex;flex-direction:column;gap:16px">
@@ -443,6 +472,7 @@ body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 
   <!-- HISTORIQUE -->
   <section class="view" id="view-historique" hidden>
+    <button type="button" class="back" id="retourRapport">‹ Retour au rapport</button>
     <div class="panel">
       <h2>Rapports enregistrés</h2>
       <div class="list" id="histList"></div>
@@ -586,16 +616,17 @@ const S = {
 };
 
 /* ---------- Tabs ---------- */
-const TABS = ["chantiers", "planning", "rapport", "historique", "equipe", "reglages"];
+const TABS = ["chantiers", "planning", "analyse", "rapport", "historique", "equipe", "reglages"];
 const ICONES = {
   chantiers: '<path d="M3 21h18"/><path d="M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/>',
   planning: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/>',
   rapport: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/>',
   historique: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  analyse: '<path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/>',
   equipe: '<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.2A5 5 0 0 1 21 19"/>',
   reglages: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>'
 };
-const NOMS_ONGLETS = { chantiers: "Chantiers", planning: "Planning", rapport: "Rapport", historique: "Historique", equipe: "Équipe", reglages: "Réglages" };
+const NOMS_ONGLETS = { chantiers: "Chantiers", planning: "Planning", analyse: "Analyse", rapport: "Rapport", historique: "Historique", equipe: "Équipe", reglages: "Réglages" };
 TABS.forEach(t => { $("tab-" + t).innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONES[t]}</svg><span>${NOMS_ONGLETS[t]}</span>`; });
 TABS.forEach(t => $("tab-" + t).addEventListener("click", () => showTab(t)));
 function showTab(name){
@@ -603,6 +634,7 @@ function showTab(name){
   window.scrollTo(0, 0);
   if (name === "chantiers" && ME.membre) { chargerChantiers(); renderAujourdhui(); }
   if (name === "planning" && ME.membre) chargerPlanning();
+  if (name === "analyse" && ME.membre) chargerAnalyse();
   if (name === "equipe" && ME.membre) chargerEquipe();
   if (name === "rapport") renderBanner();
   if (name === "historique") renderHistory();
@@ -1298,6 +1330,8 @@ async function ouvrirApp(fin){
   await appliquerEntreprise();
   $("companyLabel").textContent = `${ME.entreprise.nom} · ${ROLES[data.role]}`;
   $("tab-equipe").hidden = !peut.admin();
+  $("tab-analyse").hidden = !["admin", "conducteur"].includes(data.role);
+  $("tab-historique").hidden = true;
   $("tab-rapport").hidden = !peut.rapport();
   $("chNew").hidden = !peut.creer();
   renderCompte();
@@ -1345,12 +1379,14 @@ async function renderDetail(){
   const vis = (k) => C.sous === k ? "" : " hidden";
   let h = `<button type="button" class="back" data-act="fermer">‹ Mes chantiers</button>
     <div class="ch-head"><h2>${esc(c.nom)}</h2><div class="hint">${esc([[c.adresse, c.ville].filter(Boolean).join(", "), c.client].filter(Boolean).join(" · ") || "Pas d'adresse renseignée")}</div></div>
-    <div class="seg">${[["dossier", "Dossier"], ["heures", "Heures"], ["rapports", "Rapports"], ["infos", "Infos"]].map(([k, v]) => `<button type="button" data-act="sous" data-t="${k}" aria-pressed="${C.sous === k}">${v}</button>`).join("")}</div>`;
+    <div class="seg">${[["dossier", "Dossier"], ["heures", "Heures"], ...(g ? [["analyse", "Analyse"]] : []), ["rapports", "Rapports"], ["infos", "Infos"]].map(([k, v]) => `<button type="button" data-act="sous" data-t="${k}" aria-pressed="${C.sous === k}">${v}</button>`).join("")}</div>`;
   // Dossier
   h += `<div class="sous" data-sous="dossier"${vis("dossier")}><div class="seg">${[["plans", "Plans & détails"], ["photos", "Photos"], ["notes", "Notes"]].map(([k, v]) => `<button type="button" data-act="dtab" data-t="${k}" aria-pressed="${C.dosTab === k}">${v}</button>`).join("")}</div>
     <div id="cdDossier"><div class="empty">Chargement…</div></div></div>`;
   // Heures
   h += `<div class="sous" data-sous="heures"${vis("heures")}><div id="cdHeures"><div class="empty">Chargement…</div></div></div>`;
+  // Analyse (admin / conducteur)
+  if (g) h += `<div class="sous" data-sous="analyse"${vis("analyse")}><div id="cdAnalyse"><div class="empty">Chargement…</div></div></div>`;
   // Rapports
   h += `<div class="sous" data-sous="rapports"${vis("rapports")}>${peut.rapport() ? `<button type="button" class="btn primary" data-act="rapport" data-id="${c.id}">Faire un rapport vocal</button>` : ""}<div class="list" id="cdRapports"><div class="empty">Chargement…</div></div></div>`;
   // Infos
@@ -1364,7 +1400,7 @@ async function renderDetail(){
   if (peut.admin()) h += `<button type="button" class="btn ghost" data-act="suppr" data-id="${c.id}">${C.confirm === "ch:" + c.id ? "Confirmer la suppression" : "Supprimer le chantier"}</button>`;
   h += `</div>`;
   box.innerHTML = h; box.hidden = false;
-  chargerDossier(c); chargerHeures(c);
+  chargerDossier(c); chargerHeures(c); if (g) { A.apercu = null; A.manuel = false; chargerAnalyseChantier(c); }
   const { data, error } = await sb.from("rapports").select("id, numero, date_rapport, auteur, envoye_at, contenu").eq("chantier_id", c.id).order("created_at", { ascending: false });
   const rb = $("cdRapports"); if (!rb || C.ouvert !== c.id) return;
   C.rapports = data || [];
@@ -1401,6 +1437,7 @@ $("view-chantiers").addEventListener("click", async (e) => {
   }
   else if (act === "dtab") { C.dosTab = b.dataset.t; C.confirm = null; document.querySelectorAll('[data-act="dtab"]').forEach(x => x.setAttribute("aria-pressed", String(x.dataset.t === C.dosTab))); renderDossier(); }
   else if (act === "fopen") ouvrirFichier(id);
+  else if (["aImport", "aManuel", "aAnnuler", "aAjout", "aSave", "aSuppr"].includes(act)) actionAnalyse(act, b);
   else if (act.startsWith("h") && ["hSaisir", "hAnnuler", "hMbr", "hAddMbr", "hStep", "hEnvoyer", "hValider", "hSuppr"].includes(act)) actionHeures(act, b);
   else if (act === "fsuppr") supprimerFichier(id);
   else if (act === "fchoisir") $(b.dataset.input)?.click();
@@ -1734,6 +1771,195 @@ $("view-chantiers").addEventListener("change", (e) => {
 });
 
 
+/* --- Devis / DPGF et analyse des temps --- */
+const A = { quantites: [], heures: {}, apercu: null, manuel: false, enCours: false };
+const nb = (v) => Number(v).toLocaleString("fr-FR", { maximumFractionDigits: 2 });
+const UNITES = ["m²", "ml", "u", "kg", "m³", "ens", "forfait"];
+function chargerScript(src){
+  return new Promise((ok, ko) => {
+    if (document.querySelector(`script[src="${src}"]`)) return ok();
+    const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => ko(new Error("chargement impossible, vérifie ta connexion"));
+    document.head.appendChild(s);
+  });
+}
+async function texteDuFichier(f){
+  const n = f.name.toLowerCase();
+  if (n.endsWith(".pdf") || f.type === "application/pdf") {
+    await chargerScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    const pdf = await pdfjsLib.getDocument({ data: await f.arrayBuffer() }).promise;
+    let t = "";
+    for (let i = 1; i <= Math.min(pdf.numPages, 40); i++) {
+      const c = await (await pdf.getPage(i)).getTextContent(), lignes = {};
+      c.items.forEach(it => { const y = Math.round(it.transform[5]); (lignes[y] = lignes[y] || []).push(it); });
+      t += Object.keys(lignes).sort((a, b) => b - a).map(y => lignes[y].sort((a, b) => a.transform[4] - b.transform[4]).map(it => it.str).join(" ")).join("\n") + "\n";
+    }
+    return t;
+  }
+  if (n.endsWith(".csv") || n.endsWith(".txt")) return f.text();
+  if (/\.(xlsx|xls|ods)$/.test(n)) {
+    await chargerScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
+    const wb = XLSX.read(await f.arrayBuffer(), { type: "array" });
+    return wb.SheetNames.map(s => XLSX.utils.sheet_to_csv(wb.Sheets[s], { FS: " ; " })).join("\n");
+  }
+  throw new Error("format non pris en charge : dépose un PDF ou un fichier Excel");
+}
+async function appelFonction(nom, corps){
+  const { data: { session } } = await sb.auth.getSession(); if (!session) throw new Error("tu n'es plus connecté");
+  let res;
+  try { res = await fetch(`${SB_URL}/functions/v1/${nom}`, { method: "POST", headers: { Authorization: "Bearer " + session.access_token, apikey: SB_KEY, "Content-Type": "application/json" }, body: JSON.stringify(corps) }); }
+  catch { throw new Error(`la fonction « ${nom} » est introuvable dans Supabase (vérifie son nom)`); }
+  const d = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(d.erreur || d.message || "erreur " + res.status);
+  return d;
+}
+const heuresParTache = (journees) => {
+  const h = {};
+  (journees || []).forEach(j => { const n = Math.max(1, (j.equipe || []).length); (j.lignes || []).forEach(l => { h[l.tache] = (h[l.tache] || 0) + (Number(l.h) || 0) * n; }); });
+  return h;
+};
+
+/* Analyse d'un chantier (sous-onglet « Analyse ») */
+async function chargerAnalyseChantier(c){
+  const [q, j] = await Promise.all([
+    sb.from("quantites").select("*").eq("chantier_id", c.id).order("tache"),
+    sb.from("journees").select("equipe, lignes").eq("chantier_id", c.id)
+  ]);
+  if (C.ouvert !== c.id) return;
+  if (q.error) { const box = $("cdAnalyse"); if (box) box.innerHTML = `<div class="empty">Analyse indisponible : ${esc(q.error.message)}</div>`; return; }
+  A.quantites = q.data || []; A.heures = heuresParTache(j.data);
+  renderAnalyseChantier();
+}
+const optTaches = (cur) => { const l = TACHES.concat(TACHES.includes(cur) || !cur ? [] : [cur], TACHES.includes("Autre") ? [] : ["Autre"]); return l.map(t => `<option value="${esc(t)}"${t === cur ? " selected" : ""}>${esc(t)}</option>`).join(""); };
+const optUnites = (cur) => UNITES.concat(UNITES.includes(cur) || !cur ? [] : [cur]).map(u => `<option${u === cur ? " selected" : ""}>${esc(u)}</option>`).join("");
+function renderAnalyseChantier(){
+  const box = $("cdAnalyse"), c = C.chantiers.find(x => x.id === C.ouvert); if (!box || !c) return;
+  let h = "";
+  if (A.apercu) {
+    h += `<div class="dos-add"><div class="tag"><b>→</b>Quantités lues dans le devis : vérifie avant d'enregistrer</div>
+      <div class="hint">Décoche ce qui ne compte pas, corrige la tâche, la quantité ou l'unité si besoin.</div>
+      ${A.apercu.map((l, i) => `<div class="qrow"><label class="qk"><input type="checkbox" data-qi="${i}" data-qf="ok"${l.ok ? " checked" : ""}> <span>${esc(l.libelle || "—")}</span></label>
+        <div class="qf"><select data-qi="${i}" data-qf="tache">${optTaches(l.tache)}</select><input type="number" inputmode="decimal" step="any" min="0" data-qi="${i}" data-qf="quantite" value="${l.quantite}"><select data-qi="${i}" data-qf="unite">${optUnites(l.unite)}</select></div></div>`).join("")}
+      <div class="btns"><button type="button" class="btn primary" data-act="aSave">Enregistrer les quantités</button><button type="button" class="btn ghost" data-act="aAnnuler">Annuler</button></div></div>`;
+  } else {
+    h += `<div class="dos-add"><input type="file" id="fDevis" accept=".pdf,.xlsx,.xls,.csv,.ods,application/pdf"><button type="button" class="btn primary" data-act="aImport"${A.enCours ? " disabled" : ""}>${A.enCours ? "Lecture du devis en cours…" : "Importer un devis ou une DPGF"}</button>
+      <div class="hint">PDF ou Excel. L'IA lit les quantités (m² d'isolant, ml de relevés…) et te les propose avant enregistrement.</div>
+      <button type="button" class="btn small" data-act="aManuel">${A.manuel ? "Fermer" : "Ajouter une quantité à la main"}</button>
+      ${A.manuel ? `<div class="qf"><select id="qmT">${optTaches("")}</select><input type="number" id="qmQ" inputmode="decimal" step="any" min="0" placeholder="Quantité"><select id="qmU">${optUnites("m²")}</select></div><button type="button" class="btn small" data-act="aAjout">Ajouter</button>` : ""}</div>`;
+  }
+  const devis = C.fichiers.filter(f => f.type === "devis");
+  if (devis.length) h += `<div class="tag"><b>→</b>Devis déposés</div><div class="list">${devis.map(f => `<div class="item"><div class="l"><strong>${esc(f.titre || f.nom_fichier || "Devis")}</strong><span>par ${esc(nomDe(f.auteur))} · ${esc(dateCourte(f.created_at))}</span></div><div class="r"><button type="button" class="btn small" data-act="fopen" data-id="${f.id}">Ouvrir</button></div></div>`).join("")}</div>`;
+  // Croisement quantités × heures
+  const parT = {};
+  A.quantites.forEach(q => { const k = q.tache + "|" + q.unite; parT[k] = parT[k] || { tache: q.tache, unite: q.unite, q: 0 }; parT[k].q += Number(q.quantite) || 0; });
+  const lignes = Object.values(parT);
+  Object.keys(A.heures).forEach(t => { if (!lignes.some(l => l.tache === t)) lignes.push({ tache: t, unite: "", q: 0 }); });
+  h += `<div class="tag"><b>→</b>Temps passés par rapport aux quantités</div>`;
+  h += lignes.length ? `<div class="tbl-a"><table><thead><tr><th>Tâche</th><th>Quantité</th><th>Heures</th><th>Temps / unité</th><th>Cadence</th></tr></thead><tbody>${lignes.map(l => {
+    const hh = A.heures[l.tache] || 0;
+    const ratio = l.q && hh ? `<b>${nb(hh / l.q)} h/${esc(l.unite)}</b>` : `<span class="muted">${l.q ? "pas encore d'heures" : "pas de quantité"}</span>`;
+    const cad = l.q && hh ? `${nb(l.q / hh)} ${esc(l.unite)}/h` : "—";
+    return `<tr><td>${esc(l.tache)}</td><td>${l.q ? nb(l.q) + " " + esc(l.unite) : "—"}</td><td>${hh ? fh(hh) : "—"}</td><td>${ratio}</td><td>${cad}</td></tr>`;
+  }).join("")}</tbody></table></div><div class="hint">Heures = heures saisies × nombre de personnes présentes. Les tâches doivent porter le même nom dans le devis et dans les heures.</div>`
+    : `<div class="empty">Importe un devis et saisis des heures pour voir l'analyse.</div>`;
+  if (A.quantites.length) h += `<div class="tag"><b>→</b>Détail des quantités</div><div class="list">${A.quantites.map(q => `<div class="item"><div class="l"><strong>${esc(q.tache)} · ${nb(q.quantite)} ${esc(q.unite)}</strong><span>${esc(q.libelle || (q.source === "manuel" ? "Saisie à la main" : ""))}</span></div><div class="r"><button type="button" class="btn ghost small" data-act="aSuppr" data-id="${q.id}">${C.confirm === "q:" + q.id ? "Confirmer" : "Supprimer"}</button></div></div>`).join("")}</div>`;
+  box.innerHTML = h;
+}
+async function importerDevis(f){
+  const c = C.chantiers.find(x => x.id === C.ouvert); if (!c || !f) return;
+  A.enCours = true; renderAnalyseChantier();
+  try {
+    toast("Lecture du devis…");
+    const texte = await texteDuFichier(f);
+    if (texte.replace(/\s/g, "").length < 40) throw new Error("ce PDF ne contient pas de texte (c'est sûrement un scan). Essaie avec le fichier d'origine ou l'Excel.");
+    // On garde le devis dans le dossier du chantier
+    try {
+      const chemin = `${c.entreprise_id}/${c.id}/${Date.now().toString(36)}-${nomPropre(f.name)}`;
+      const up = await sb.storage.from(BUCKET).upload(chemin, f, { contentType: f.type || "application/octet-stream", upsert: false });
+      if (!up.error) await sb.from("fichiers").insert({ chantier_id: c.id, type: "devis", titre: f.name.replace(/\.[^.]+$/, ""), chemin, nom_fichier: f.name, mime: f.type, taille: f.size });
+    } catch {}
+    toast("L'IA analyse le devis… (jusqu'à une minute)");
+    const d = await appelFonction("analyse-devis", { texte, taches: TACHES });
+    if (!d.lignes || !d.lignes.length) throw new Error("aucune quantité trouvée dans ce devis");
+    A.apercu = d.lignes.map(l => ({ ...l, ok: true }));
+    toast(`${d.lignes.length} lignes trouvées : vérifie-les`);
+  } catch (e) { toast("Import impossible : " + (e?.message || "erreur")); }
+  A.enCours = false;
+  chargerDossier(c); renderAnalyseChantier();
+}
+function lireApercu(){
+  document.querySelectorAll("#cdAnalyse [data-qi]").forEach(el => {
+    const l = A.apercu[Number(el.dataset.qi)]; if (!l) return;
+    l[el.dataset.qf] = el.type === "checkbox" ? el.checked : el.dataset.qf === "quantite" ? Number(String(el.value).replace(",", ".")) : el.value;
+  });
+}
+async function actionAnalyse(act, b){
+  const c = C.chantiers.find(x => x.id === C.ouvert); if (!c) return;
+  if (act === "aImport") return $("fDevis")?.click();
+  if (act === "aManuel") { A.manuel = !A.manuel; return renderAnalyseChantier(); }
+  if (act === "aAnnuler") { A.apercu = null; return renderAnalyseChantier(); }
+  if (act === "aAjout") {
+    const q = Number(String($("qmQ").value).replace(",", "."));
+    if (!(q > 0)) return toast("Indique une quantité.");
+    const { error } = await sb.from("quantites").insert({ chantier_id: c.id, tache: $("qmT").value, quantite: q, unite: $("qmU").value, source: "manuel" });
+    if (error) return toast("Quantité non enregistrée : " + error.message);
+    A.manuel = false; toast("Quantité ajoutée"); return chargerAnalyseChantier(c);
+  }
+  if (act === "aSave") {
+    lireApercu();
+    const rows = A.apercu.filter(l => l.ok && l.quantite > 0).map(l => ({ chantier_id: c.id, tache: l.tache, libelle: l.libelle || null, quantite: l.quantite, unite: l.unite || "m²", source: "devis" }));
+    if (!rows.length) return toast("Aucune ligne cochée.");
+    const { error } = await sb.from("quantites").insert(rows);
+    if (error) return toast("Quantités non enregistrées : " + error.message);
+    A.apercu = null; toast(`${rows.length} quantités enregistrées`); return chargerAnalyseChantier(c);
+  }
+  if (act === "aSuppr") {
+    const id = b.dataset.id;
+    if (C.confirm !== "q:" + id) { C.confirm = "q:" + id; return renderAnalyseChantier(); }
+    C.confirm = null;
+    const { error } = await sb.from("quantites").delete().eq("id", id);
+    if (error) return toast("Suppression impossible : " + error.message);
+    toast("Quantité supprimée"); return chargerAnalyseChantier(c);
+  }
+}
+$("view-chantiers").addEventListener("change", (e) => {
+  if (e.target.id === "fDevis") { const f = e.target.files?.[0]; e.target.value = ""; importerDevis(f); }
+});
+
+/* Analyse globale (onglet « Analyse ») : temps moyens sur tous les chantiers */
+async function chargerAnalyse(){
+  const box = $("anGrid"); box.innerHTML = `<div class="empty">Calcul en cours…</div>`;
+  if (!C.chantiers.length) await chargerChantiers();
+  const [q, j] = await Promise.all([sb.from("quantites").select("chantier_id, tache, quantite, unite"), sb.from("journees").select("chantier_id, equipe, lignes")]);
+  if (q.error || j.error) { box.innerHTML = `<div class="empty">Analyse indisponible : ${esc((q.error || j.error).message)}</div>`; return; }
+  const H = {};
+  (j.data || []).forEach(x => { const n = Math.max(1, (x.equipe || []).length); (x.lignes || []).forEach(l => { const k = x.chantier_id + "|" + l.tache; H[k] = (H[k] || 0) + (Number(l.h) || 0) * n; }); });
+  const Q = {};
+  (q.data || []).forEach(x => { const k = x.chantier_id + "|" + x.tache + "|" + x.unite; Q[k] = (Q[k] || 0) + (Number(x.quantite) || 0); });
+  const G = {};
+  Object.entries(Q).forEach(([k, qte]) => {
+    const [cid, t, u] = k.split("|"), hh = H[cid + "|" + t];
+    if (!hh || !qte) return;
+    const g = G[t + "|" + u] = G[t + "|" + u] || { t, u, items: [] };
+    g.items.push({ cid, q: qte, h: hh, r: hh / qte });
+  });
+  const groupes = Object.values(G).sort((a, b) => a.t.localeCompare(b.t));
+  if (!groupes.length) { box.innerHTML = `<div class="empty">Pas encore assez de données. Il faut, sur au moins un chantier, des quantités (devis importé) <b>et</b> des heures saisies sur les mêmes tâches.</div>`; return; }
+  const nomCh = (id) => C.chantiers.find(c => c.id === id)?.nom || "Chantier";
+  box.innerHTML = groupes.map(g => {
+    const sq = g.items.reduce((s, i) => s + i.q, 0), sh = g.items.reduce((s, i) => s + i.h, 0);
+    const rs = g.items.map(i => i.r), mn = Math.min(...rs), mx = Math.max(...rs);
+    return `<div class="an-card"><div class="row"><h3>${esc(g.t)}</h3><span class="pill">${g.items.length} chantier${g.items.length > 1 ? "s" : ""}</span></div>
+      <div class="an-big">${nb(sh / sq)} <small>h / ${esc(g.u)}</small></div>
+      <div class="hint">Soit ${nb(sq / sh)} ${esc(g.u)} par heure · ${nb(sq)} ${esc(g.u)} pour ${fh(sh)} au total${g.items.length > 1 ? ` · de ${nb(mn)} à ${nb(mx)} h/${esc(g.u)} selon les chantiers` : ""}</div>
+      <div class="list">${g.items.sort((a, b) => a.r - b.r).map(i => `<div class="item"><div class="l"><strong>${esc(nomCh(i.cid))}</strong><span>${nb(i.q)} ${esc(g.u)} · ${fh(i.h)}</span></div><div class="r"><b>${nb(i.r)} h/${esc(g.u)}</b></div></div>`).join("")}</div></div>`;
+  }).join("");
+}
+
+$("anMaj").addEventListener("click", () => chargerAnalyse());
+$("voirHisto").addEventListener("click", () => showTab("historique"));
+$("retourRapport").addEventListener("click", () => showTab("rapport"));
+
 /* --- Dossier chantier : plans, détails, photos, notes --- */
 const BUCKET = "chantiers";
 const dateCourte = (iso) => { const d = new Date(iso); return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} à ${pad(d.getHours())}h${pad(d.getMinutes())}`; };
@@ -1750,6 +1976,7 @@ async function chargerDossier(c){
     (u || []).forEach(x => { if (x.signedUrl) C.urls[x.path] = x.signedUrl; });
   }
   renderDossier();
+  if ($("cdAnalyse") && !A.enCours) renderAnalyseChantier();
 }
 function renderDossier(){
   const box = $("cdDossier"), c = C.chantiers.find(x => x.id === C.ouvert); if (!box || !c) return;
