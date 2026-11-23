@@ -1848,7 +1848,7 @@ function renderAnalyseChantier(){
       ${A.manuel ? `<div class="qf"><select id="qmT">${optTaches("")}</select><input type="number" id="qmQ" inputmode="decimal" step="any" min="0" placeholder="Quantité"><select id="qmU">${optUnites("m²")}</select></div><button type="button" class="btn small" data-act="aAjout">Ajouter</button>` : ""}</div>`;
   }
   const devis = C.fichiers.filter(f => f.type === "devis");
-  if (devis.length) h += `<div class="tag"><b>→</b>Devis déposés</div><div class="list">${devis.map(f => `<div class="item"><div class="l"><strong>${esc(f.titre || f.nom_fichier || "Devis")}</strong><span>par ${esc(nomDe(f.auteur))} · ${esc(dateCourte(f.created_at))}</span></div><div class="r"><button type="button" class="btn small" data-act="fopen" data-id="${f.id}">Ouvrir</button></div></div>`).join("")}</div>`;
+  if (devis.length) h += `<div class="tag"><b>→</b>Devis déposés</div><div class="list">${devis.map(f => `<div class="item"><div class="l"><strong>${esc(f.titre || f.nom_fichier || "Devis")}</strong><span>par ${esc(nomDe(f.auteur))} · ${esc(dateCourte(f.created_at))}</span></div><div class="r"><button type="button" class="btn small" data-act="fopen" data-id="${f.id}">Ouvrir</button>${peutSupprimer(f, c) ? `<button type="button" class="btn ghost small" data-act="fsuppr" data-id="${f.id}">${C.confirm === "f:" + f.id ? "Confirmer" : "Supprimer"}</button>` : ""}</div></div>`).join("")}</div>`;
   // Croisement quantités × heures
   const parT = {};
   A.quantites.forEach(q => { const k = q.tache + "|" + q.unite; parT[k] = parT[k] || { tache: q.tache, unite: q.unite, q: 0 }; parT[k].q += Number(q.quantite) || 0; });
@@ -2045,7 +2045,7 @@ function ouvrirFichier(id){
 }
 async function supprimerFichier(id){
   const f = C.fichiers.find(x => x.id === id); if (!f) return;
-  if (C.confirm !== "f:" + id) { C.confirm = "f:" + id; return renderDossier(); }
+  if (C.confirm !== "f:" + id) { C.confirm = "f:" + id; renderDossier(); if ($("cdAnalyse")) renderAnalyseChantier(); return; }
   C.confirm = null;
   const { error } = await sb.from("fichiers").delete().eq("id", id);
   if (error) return toast("Suppression impossible : " + error.message);
