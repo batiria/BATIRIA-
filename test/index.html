@@ -1093,7 +1093,9 @@ function renderHistory(){
     const it = document.createElement("div"); it.className = "item";
     it.innerHTML = `<div class="l"><strong>${esc(v.report.infos?.chantier || "Chantier")}</strong><span><span class="mono">${esc(v.meta.num)}</span> · ${esc(v.report.infos?.date || "")} · ${esc(v.meta.modelNom)}${v.meta.sentTo ? " · envoyé ✓" : ""}</span></div><div class="r"><button type="button" class="btn small">Ouvrir</button><button type="button" class="btn ghost small">${pendingDel === v.meta.num ? "Confirmer" : "Supprimer"}</button></div>`;
     const [o, d] = it.querySelectorAll("button");
-    o.addEventListener("click", () => { S.meta = v.meta; S.report = v.report; S.chantier = v.meta.chantier || null; S.photos = []; renderPhotos(); renderReport(); showTab("rapport"); $("captureBlock").hidden = true; $("resultBlock").hidden = false; if (v.nbPhotos) toast("Les photos ne sont pas gardées dans l'historique."); });
+    o.addEventListener("click", async () => { S.meta = v.meta; S.report = v.report; S.chantier = v.meta.chantier || null; S.photos = []; renderPhotos(); renderReport(); showTab("rapport"); $("captureBlock").hidden = true; $("resultBlock").hidden = false;
+      const n = ME.membre ? await rechargerPhotosRapport(v.meta) : 0;
+      if (n) { renderPhotos(); renderReport(); } else if (v.nbPhotos) toast("Les photos de ce rapport n'ont pas été gardées en ligne."); });
     d.addEventListener("click", () => { if (pendingDel !== v.meta.num) { pendingDel = v.meta.num; return renderHistory(); } pendingDel = null; const a = store.get("bat.hist", []); a.splice(idx, 1); store.set("bat.hist", a); renderHistory(); });
     box.appendChild(it);
   });
@@ -1447,7 +1449,8 @@ $("view-chantiers").addEventListener("click", async (e) => {
     if (!r || !r.contenu?.report) return toast("Ce rapport ne peut pas être ouvert.");
     S.report = r.contenu.report; S.meta = Object.assign({}, r.contenu.meta || {}, { dbId: r.id }); S.chantier = ch || null;
     S.photos = []; renderPhotos(); renderReport(); showTab("rapport"); $("captureBlock").hidden = true; $("resultBlock").hidden = false; window.scrollTo(0, 0);
-    toast("Les photos ne sont pas encore gardées en ligne (étape suivante).");
+    const n = await rechargerPhotosRapport(r.contenu.meta);
+    if (n) { renderPhotos(); renderReport(); }
   }
 });
 $("ch-create").addEventListener("click", async () => {
@@ -2096,8 +2099,39 @@ function remplirDepuisChantier(){
   if (!r.infos.adresse && (c.adresse || c.ville)) r.infos.adresse = [c.adresse, c.ville].filter(Boolean).join(", ");
   if (!r.infos.client && c.client) r.infos.client = c.client;
 }
+async function envoyerPhotosRapport(){
+  // Range les photos du rapport dans le dossier du chantier (une seule fois chacune)
+  const aEnvoyer = S.photos.filter(p => !p.chemin && p.blob);
+  if (aEnvoyer.length) toast(`Envoi de ${aEnvoyer.length} photo${aEnvoyer.length > 1 ? "s" : ""} dans le dossier du chantier…`);
+  let echecs = 0;
+  for (let i = 0; i < S.photos.length; i++) {
+    const p = S.photos[i]; if (p.chemin || !p.blob) continue;
+    const legende = S.report?.photos?.find(x => x.n === i + 1)?.legende || p.caption || "";
+    const chemin = `${ME.membre.entreprise_id}/${S.chantier.id}/rapport-${nomPropre(S.meta.num || "rapport")}-${i + 1}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+    try {
+      const up = await sb.storage.from(BUCKET).upload(chemin, p.blob, { contentType: "image/jpeg", upsert: false });
+      if (up.error) throw up.error;
+      const { error } = await sb.from("fichiers").insert({ chantier_id: S.chantier.id, type: "photo", texte: [legende, `Rapport ${S.meta.num || ""}`.trim()].filter(Boolean).join(" · "), chemin, nom_fichier: `photo-${i + 1}.jpg`, mime: "image/jpeg", taille: p.blob.size });
+      if (error) { await sb.storage.from(BUCKET).remove([chemin]); throw error; }
+      p.chemin = chemin;
+    } catch { echecs++; }
+  }
+  if (echecs) toast(`${echecs} photo${echecs > 1 ? "s n'ont" : " n'a"} pas pu être envoyée${echecs > 1 ? "s" : ""}. Réessaie en enregistrant à nouveau.`);
+  S.meta.photos = S.photos.filter(p => p.chemin).map(p => ({ chemin: p.chemin, w: p.w, h: p.h, caption: p.caption || "" }));
+}
+async function rechargerPhotosRapport(meta){
+  const liste = (meta && meta.photos) || []; if (!liste.length) return 0;
+  const { data } = await sb.storage.from(BUCKET).createSignedUrls(liste.map(x => x.chemin), 600);
+  let n = 0;
+  for (const x of liste) {
+    const u = (data || []).find(d => d.path === x.chemin)?.signedUrl; if (!u) continue;
+    try { const blob = await (await fetch(u)).blob(); S.photos.push({ blob, url: URL.createObjectURL(blob), w: x.w, h: x.h, caption: x.caption || "", chemin: x.chemin }); n++; } catch {}
+  }
+  return n;
+}
 async function sauverEnLigne(quiet){
   if (!sb || !ME.membre || !S.chantier || !S.report || !peut.rapport()) return;
+  await envoyerPhotosRapport();
   const row = { chantier_id: S.chantier.id, numero: S.meta.num, date_rapport: isoDate(S.report.infos?.date), modele_id: S.meta.modelId || null,
     contenu: { report: S.report, meta: Object.assign({}, S.meta, { dbId: undefined }) }, envoye_at: S.meta.sentTo ? new Date().toISOString() : null };
   const q = S.meta.dbId ? sb.from("rapports").update(row).eq("id", S.meta.dbId).select("id").single() : sb.from("rapports").insert(row).select("id").single();
