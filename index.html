@@ -3,12 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#2A2C2E">
+<meta name="theme-color" content="#1B2440">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Batiria">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="robots" content="noindex">
-<link rel="icon" type="image/png" sizes="192x192" href="../icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Batiria</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
@@ -19,12 +20,12 @@
 <style>
 /* Batiria — identité du site : bleu nuit, bleu vif, capitales grasses, étiquettes mono, cadres droits */
 :root{
-  color-scheme:dark;
-  --bar:#2A2C2E; --ground:#101A3B; --surface:#16214A; --sunk:#0C1431; --raise:#1C2857;
-  --ink:#FFFFFF; --muted:#A7AFCB; --line:#28346A;
-  --accent:#2F5BDB; --accent-hover:#3D69E8; --accent-ink:#FFFFFF; --accent-soft:rgba(47,91,219,.18); --accent-text:#8EA9FF;
+  color-scheme:light;
+  --bar:#1B2440; --ground:#F2F3F5; --surface:#FFFFFF; --sunk:#F6F7F9; --raise:#ECEEF2;
+  --ink:#14171C; --muted:#5F6673; --line:#E1E4EA;
+  --accent:#2F5BDB; --accent-hover:#244CC0; --accent-ink:#FFFFFF; --accent-soft:#EAF0FF; --accent-text:#2F5BDB;
   --rec:#E5484D; --rec-soft:rgba(229,72,77,.22);
-  --ok:#7FD69A; --ok-soft:rgba(127,214,154,.14); --warn-soft:rgba(242,201,76,.12); --warn:#F2C94C;
+  --ok:#1F9D55; --ok-soft:#E6F6EC; --warn-soft:#FFF7DD; --warn:#8A6400;
   --display:'Archivo',system-ui,sans-serif; --body:'IBM Plex Sans',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
 }
 *{box-sizing:border-box}
@@ -50,6 +51,9 @@ section.view{display:flex;flex-direction:column;gap:16px;padding-top:16px}
 .row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 @media (max-width:520px){.grid2{grid-template-columns:minmax(0,1fr)}}
+label.cgv{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.4;color:var(--ink);cursor:pointer}
+label.cgv input{margin-top:2px;width:18px;height:18px;flex:none;accent-color:var(--accent)}
+label.cgv a{color:var(--accent)}
 label.f{display:flex;flex-direction:column;gap:6px;font:500 11px var(--mono);letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)}
 input[type=text],input[type=url],input[type=password],input[type=email],select,textarea{font:400 16px var(--body);color:var(--ink);background:var(--sunk);border:1px solid var(--line);border-radius:2px;padding:10px 12px;min-height:46px;width:100%;letter-spacing:0;text-transform:none}
 select{appearance:auto}
@@ -148,7 +152,7 @@ details summary{cursor:pointer;font:500 12px var(--mono);letter-spacing:1px;text
 nav.tabs{overflow-x:auto;scrollbar-width:none}
 nav.tabs::-webkit-scrollbar{display:none}
 nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
-.testbar{background:var(--warn);color:#1B1B1B;font:600 11px var(--mono);letter-spacing:1.2px;text-transform:uppercase;text-align:center;padding:6px 16px}
+.testbar{background:#F2C94C;color:#1B1B1B;font:600 11px var(--mono);letter-spacing:1.2px;text-transform:uppercase;text-align:center;padding:6px 16px}
 .auth{max-width:440px;margin:6vh auto 0;display:flex;flex-direction:column;gap:16px}
 .auth h1{font-family:var(--display);font-weight:800;font-size:30px;line-height:1.05;text-transform:uppercase;margin:0}
 .auth p{margin:0;color:var(--muted)}
@@ -169,14 +173,143 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
 .pin-pad button{min-height:62px;border:1px solid var(--line);background:var(--sunk);color:var(--ink);font:600 24px var(--display);cursor:pointer}
 .pin-pad button:active{background:var(--accent-soft);border-color:var(--accent)}
 .pin-pad button.fn{font:600 12px var(--mono);letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+#view-reglages.lecture #newModel,#view-reglages.lecture #logoRemove,#view-reglages.lecture #modelList button{display:none}
+#view-reglages.lecture .logo-drop{pointer-events:none}
+.seg{display:flex;border:1px solid var(--line);background:var(--sunk)}
+.seg button{flex:1;min-height:42px;border:0;background:transparent;color:var(--muted);font:600 11px var(--mono);letter-spacing:1px;text-transform:uppercase;cursor:pointer;border-bottom:2px solid transparent}
+.seg button[aria-pressed="true"]{color:var(--ink);background:var(--surface);border-bottom-color:var(--accent)}
+.dos-add{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px dashed var(--line);background:var(--sunk)}
+.dos-add input[type=file]{display:none}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.gal figure{margin:0;display:flex;flex-direction:column;gap:6px;background:var(--sunk);border:1px solid var(--line);padding:6px}
+.gal img{width:100%;aspect-ratio:4/3;object-fit:cover;background:var(--raise);cursor:pointer;display:block}
+.gal figcaption{font-size:12px;color:var(--muted);line-height:1.35}
+.gal figcaption b{color:var(--ink);font-weight:500}
+.note-txt{white-space:pre-wrap;color:var(--ink);font-size:14px}
+.bell{position:relative;min-height:40px;min-width:40px;border:1px solid #3A3D40;background:transparent;color:#fff;font-size:18px;cursor:pointer}
+.bell b{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--rec);color:#fff;font:700 11px/20px var(--body)}
+.top-r{display:flex;align-items:center;gap:10px}
+.pl-eq{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-top:1px solid var(--line)}
+.pl-eq h3{margin:0;font-family:var(--display);font-size:18px;text-transform:uppercase}
+.pl-day{display:grid;grid-template-columns:72px 1fr;gap:10px;align-items:start}
+.pl-d{font:600 11px var(--mono);letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding-top:12px}
+.pl-day.auj .pl-d{color:var(--accent-text)}
+.slot{width:100%;min-height:46px;text-align:left;padding:8px 12px;border:1px dashed var(--line);background:transparent;color:var(--muted);font:500 13px var(--body);display:flex;flex-direction:column;gap:2px;cursor:pointer}
+div.slot{cursor:default}
+.slot.full{border-style:solid;border-color:var(--accent);background:var(--accent-soft);color:var(--ink)}
+.slot small{font:600 10px var(--mono);letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.slot b{font-weight:600}
+.slot b.muted,.muted{color:var(--muted)}
+.pl-edit{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--accent);background:var(--sunk)}
+.pl-half{display:flex;flex-direction:column;gap:6px}
+.pl-half .pl-d{padding-top:0}
+.pl-half select,.pl-half input{min-height:44px}
+.step{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}
+.step-c{display:flex;align-items:center;gap:10px}
+.step-c b{min-width:52px;text-align:center;font-family:var(--mono)}
+.hbars{display:flex;flex-direction:column;gap:10px}
+.hbar .row{font-size:13px}
+.track{height:8px;background:var(--sunk);border:1px solid var(--line)}
+.track div{height:100%;background:var(--accent)}
+.chip-x{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:0 0 0 6px;font-size:13px}
+#notifPanel{margin-bottom:16px}
+
+/* ---------- Thème clair « chantier » ---------- */
+header.top{border-bottom:0}
+header.top .brand,header.top .company{color:#fff}
+header.top .company{opacity:.8}
+.bell{border-color:rgba(255,255,255,.25)}
+.panel{border:0;border-radius:14px;box-shadow:0 1px 2px rgba(20,23,28,.06),0 4px 14px rgba(20,23,28,.05)}
+.btn{border-radius:10px;border-color:#D5D9E0;color:var(--ink)}
+.btn.primary,.btn.dark{color:#fff}
+.btn.ghost{border-color:transparent;color:var(--muted)}
+input[type=text],input[type=url],input[type=password],input[type=email],input[type=date],select,textarea{border-radius:10px;background:#fff;color:var(--ink);border:1px solid #D5D9E0}
+input[type=date]{font:400 16px var(--body);padding:10px 12px;min-height:46px;width:100%}
+input::placeholder,textarea::placeholder{color:#9AA1AD}
+.tag{color:var(--muted)}.tag b{color:var(--accent)}
+.chip{border-radius:999px;background:#fff;border-color:#D5D9E0}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+.chip[aria-pressed="true"]::before{color:var(--accent)}
+.pill{border-radius:999px}
+.pill.ok{border-color:#B7E4C7;background:var(--ok-soft)}
+.alert{border-color:#F2DC8C;border-radius:10px}
+.err{border-color:#F5B5B7;background:#FDECEC;color:#B42318}
+.toast{background:#14171C;color:#fff;border-radius:10px;bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+.add-photo,.logo-drop{border-color:#C9CED8;border-radius:10px}
+.seg{border-radius:10px;overflow:hidden;background:var(--raise);border:0;padding:3px;gap:3px}
+.seg button{border-radius:8px;border-bottom:0;min-height:38px}
+.seg button[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.dos-add{border-radius:12px;border-color:#D5D9E0;background:var(--sunk)}
+.pl-edit{border-radius:12px}
+.slot{border-radius:10px;border-color:#D5D9E0}
+.slot.full{border-color:var(--accent);background:var(--accent-soft)}
+.gal figure{border-radius:10px;border-color:var(--line);background:#fff}
+.gal img{border-radius:6px}
+.track{border:0;border-radius:4px;background:var(--raise)}
+.track div{border-radius:4px}
+.testbar{position:relative;z-index:21}
+/* Onglets en bas de l'écran, avec icônes */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#fff;border:0;border-top:1px solid var(--line);justify-content:space-around;padding:0 4px env(safe-area-inset-bottom,0px);box-shadow:0 -4px 14px rgba(20,23,28,.05);overflow:visible}
+nav.tabs button{flex:1 1 0;min-width:0;min-height:62px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font:600 11px var(--body);letter-spacing:0;text-transform:none;color:var(--muted);border:0;border-top:3px solid transparent;background:transparent;white-space:nowrap}
+nav.tabs button svg{width:22px;height:22px}
+nav.tabs button[aria-selected="true"]{color:var(--accent);background:transparent;border-top-color:var(--accent)}
+body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+/* Écran chantier */
+.back{align-self:flex-start;border:0;background:transparent;color:var(--accent);font:600 15px var(--body);padding:4px 0;cursor:pointer}
+.ch-head h2{margin:0}
+.ch-card{cursor:pointer}
+.sous{display:flex;flex-direction:column;gap:14px}
+.item .l{min-width:0}
+.item .l span,.item .l strong{overflow-wrap:anywhere}
+#eqList .item,#saEnt .item,#saDem .item{flex-wrap:wrap}
+#eqList .item .l{flex:1 1 220px}
+#eqList .item .r{flex:1 1 220px;justify-content:flex-end}
+.banner{border-radius:12px}
+.pin-pad button{border-radius:12px;background:#fff}
+.pin-dots span{border-color:var(--accent)}
+.pin-dots span.on{background:var(--accent)}
+/* ---------- Version PC (écran large) : menu à gauche, contenu plus large ---------- */
+@media (min-width: 1000px){
+  body{padding-bottom:0;padding-left:232px}
+  header.top .in,.wrap{max-width:1100px}
+  .wrap{padding:28px 32px 48px}
+  nav.tabs{top:0;bottom:0;right:auto;left:0;width:232px;flex-direction:column;justify-content:flex-start;gap:4px;padding:84px 12px 16px;border-top:0;border-right:1px solid var(--line);box-shadow:none;z-index:15}
+  nav.tabs button{flex:0 0 auto;flex-direction:row;justify-content:flex-start;gap:12px;min-height:46px;padding:0 14px;font-size:14px;border-top:0;border-radius:10px}
+  nav.tabs button[aria-selected="true"]{background:var(--accent-soft)}
+  header.top{position:fixed;left:0;right:0;top:0}
+  .testbar{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:40;padding:4px}
+  body > .wrap{margin-top:72px}
+  .toast{bottom:24px}
+  #view-chantiers:not([hidden]),#view-planning:not([hidden]),#view-reglages:not([hidden]){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}
+  #view-chantiers > #notifPanel,#chDetail,#jourPanel{grid-column:1 / -1}
+  #view-planning > .panel:first-child{grid-column:1 / -1}
+  #plGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:0 24px}
+  .gal{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+  #chDetail{max-width:none}
+}
+.qrow{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-top:1px solid var(--line)}
+.qk{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--ink)}
+.qk input{margin-top:3px;width:18px;height:18px}
+.qf{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px}
+.qf > *{min-width:0;width:100%}
+.qf select,.qf input{min-height:42px;font-size:15px!important;padding:8px!important;border:1px solid #D5D9E0;border-radius:10px;background:#fff;color:var(--ink);font-family:var(--body)}
+.tbl-a{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+.tbl-a table{width:100%;border-collapse:collapse;font-size:13px}
+.tbl-a th{text-align:left;background:var(--sunk);font:600 10px var(--mono);letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:8px 10px;white-space:nowrap}
+.tbl-a td{padding:9px 10px;border-top:1px solid var(--line);white-space:nowrap}
+.an-card{display:flex;flex-direction:column;gap:8px;padding:16px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.an-card h3{margin:0;font-family:var(--display);font-size:17px;text-transform:uppercase}
+.an-big{font:800 30px var(--display);color:var(--accent)}
+.an-big small{font:600 14px var(--body);color:var(--muted)}
+#anGrid{display:grid;gap:14px}
+@media (min-width:1000px){#anGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .pin-links{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
 </style>
 </head>
 <body>
-<div class="testbar">Version test · comptes et chantiers</div>
 <header class="top"><div class="in">
   <div class="brand"><i aria-hidden="true"></i>Batiria</div>
-  <div class="company" id="companyLabel"></div>
+  <div class="top-r"><div class="company" id="companyLabel"></div><button type="button" class="bell" id="notifBtn" hidden aria-label="Notifications">🔔<b id="notifNb" hidden></b></button></div>
 </div></header>
 <div class="wrap" id="authView">
   <div class="auth">
@@ -186,6 +319,7 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
       <p>Entre ton adresse e-mail : on t'envoie un code à 6 chiffres. Pas de mot de passe à retenir.</p>
       <label class="f">Ton e-mail<input type="email" id="a-mail" autocomplete="email" inputmode="email" placeholder="prenom@entreprise.fr"></label>
       <button type="button" class="btn primary" id="a-send">Recevoir mon code</button>
+      <div class="hint">Nouvelle entreprise ? Entre ton e-mail : après le code, tu pourras demander un accès.</div>
     </div>
     <div class="panel" id="a-code" hidden>
       <h1>Regarde tes e-mails</h1>
@@ -196,8 +330,10 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
     </div>
     <div class="panel" id="a-wait" hidden>
       <h1>Accès en attente</h1>
-      <p>Tu es bien connecté avec <strong id="a-waitMail"></strong>, mais aucune entreprise ne t'a encore ajouté. Demande à ton responsable de t'inviter avec cette adresse, puis reconnecte-toi.</p>
-      <button type="button" class="btn" data-logout>Se déconnecter</button>
+      <p>Tu es bien connecté avec <strong id="a-waitMail"></strong>, mais aucune entreprise ne t'a encore ajouté.</p>
+      <p><b>Tu travailles dans une entreprise déjà cliente ?</b> Demande à ton responsable de t'inviter avec cette adresse, puis reconnecte-toi.</p>
+      <div id="a-demande" style="display:flex;flex-direction:column;gap:12px"></div>
+      <button type="button" class="btn ghost" data-logout>Se déconnecter</button>
     </div>
     <div class="panel" id="a-pin" hidden>
       <h1 id="p-titre">Code PIN</h1>
@@ -215,6 +351,13 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
         <button type="button" class="btn ghost small" data-logout>Se déconnecter</button>
       </div>
     </div>
+    <div class="panel" id="a-cgv" hidden>
+      <h1>Conditions générales</h1>
+      <p>Avant de continuer, merci de lire et d'accepter les conditions générales de vente et d'utilisation de Batiria, pour ton entreprise.</p>
+      <label class="cgv"><input type="checkbox" id="cgvOk"> <span>J'ai lu et j'accepte les <a href="https://batiria.github.io/BATIRIA-/cgv.html" target="_blank" rel="noopener">conditions générales</a> pour mon entreprise.</span></label>
+      <button type="button" class="btn primary" id="cgvAccepter">Continuer</button>
+      <button type="button" class="btn ghost" data-logout>Se déconnecter</button>
+    </div>
     <div class="panel" id="a-off" hidden>
       <h1>Petit souci</h1>
       <p id="a-offTxt"></p>
@@ -230,15 +373,20 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
   </div>
   <nav class="tabs" role="tablist" aria-label="Sections">
     <button type="button" role="tab" id="tab-chantiers" aria-selected="true">Chantiers</button>
+    <button type="button" role="tab" id="tab-planning" aria-selected="false">Planning</button>
+    <button type="button" role="tab" id="tab-analyse" aria-selected="false" hidden>Analyse</button>
     <button type="button" role="tab" id="tab-rapport" aria-selected="false">Rapport</button>
     <button type="button" role="tab" id="tab-historique" aria-selected="false">Historique</button>
     <button type="button" role="tab" id="tab-equipe" aria-selected="false" hidden>Équipe</button>
     <button type="button" role="tab" id="tab-reglages" aria-selected="false">Réglages</button>
+    <button type="button" role="tab" id="tab-batiria" aria-selected="false" hidden>Batiria</button>
   </nav>
 
   <!-- CHANTIERS -->
+  <div class="panel" id="notifPanel" hidden></div>
   <section class="view" id="view-chantiers">
-    <div class="panel">
+    <div class="panel" id="jourPanel" hidden></div>
+    <div class="panel" id="chListPanel">
       <div class="row"><h2>Mes chantiers</h2><span class="pill" id="chCount"></span></div>
       <div class="list" id="chList"><div class="empty">Chargement…</div></div>
     </div>
@@ -253,9 +401,59 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
     </div>
   </section>
 
+  <!-- PLANNING -->
+  <section class="view" id="view-planning" hidden>
+    <div class="panel">
+      <div class="tag"><b>→</b>Planning des équipes</div>
+      <div class="row"><h2 id="plTitre">Planning</h2></div>
+      <div class="btns"><button type="button" class="btn small" data-pl="prev" aria-label="Semaine précédente">‹ Précédente</button><button type="button" class="btn small" data-pl="now">Cette semaine</button><button type="button" class="btn small" data-pl="next" aria-label="Semaine suivante">Suivante ›</button></div>
+      <div class="hint" id="plLecture" hidden>Planning en lecture seule : c'est ton conducteur de travaux qui le prépare.</div>
+      <div id="plGrid"><div class="empty">Chargement…</div></div>
+    </div>
+    <div class="panel" id="plEquipes" hidden>
+      <h2>Équipes</h2>
+      <div class="hint">Une équipe = un nom, un chef d'équipe (il reçoit les notifications du planning) et ses compagnons.</div>
+      <div class="list" id="plEqList"></div>
+    </div>
+    <datalist id="dlTaches"></datalist>
+  </section>
+
+  <!-- ANALYSE -->
+  <section class="view" id="view-analyse" hidden>
+    <div class="panel">
+      <div class="tag"><b>→</b>Analyse des temps</div>
+      <h2>Tes temps moyens par tâche</h2>
+      <div class="hint">Calculés à partir des quantités des devis et des heures saisies par les chefs d'équipe, sur tous tes chantiers. Utile pour chiffrer tes prochains devis.</div>
+      <button type="button" class="btn small" id="anMaj">Actualiser</button>
+    </div>
+    <div id="anGrid"></div>
+  </section>
+
+  <!-- BATIRIA (super admin) -->
+  <section class="view" id="view-batiria" hidden>
+    <div class="panel">
+      <div class="row"><h2>Demandes d'accès</h2><span class="pill" id="saNbDem"></span></div>
+      <div class="list" id="saDem"><div class="empty">Chargement…</div></div>
+      <div class="hint">Valider crée l'entreprise : la personne en devient l'admin et reçoit un mail.</div>
+    </div>
+    <div class="panel">
+      <h2>Entreprises clientes</h2>
+      <div class="hint" id="saTotal"></div>
+      <div class="list" id="saEnt"></div>
+      <div class="hint">Suspendre coupe immédiatement l'accès de tous les comptes de l'entreprise (impayé). Les données sont gardées : « Réactiver » rend l'accès.</div>
+    </div>
+    <div class="panel">
+      <div class="tag"><b>+</b>Créer une entreprise à la main</div>
+      <label class="f">Nom de l'entreprise<input type="text" id="saNom"></label>
+      <div class="grid2"><label class="f">E-mail de l'admin<input type="email" id="saMail" inputmode="email"></label><label class="f">Nom de l'admin<input type="text" id="saNomAdmin"></label></div>
+      <button type="button" class="btn primary" id="saCreer">Créer l'entreprise</button>
+    </div>
+  </section>
+
   <!-- RAPPORT -->
   <section class="view" id="view-rapport" hidden>
     <div class="banner" id="chBanner" hidden></div>
+    <button type="button" class="back" id="voirHisto">Rapports gardés sur ce téléphone ›</button>
     <div class="alert err" id="setupAlert" hidden>L'appli n'est pas encore reliée à Make. Va dans <strong>Réglages</strong> et colle l'adresse de ton webhook.</div>
 
     <div id="captureBlock" style="display:flex;flex-direction:column;gap:16px">
@@ -314,6 +512,7 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
 
   <!-- HISTORIQUE -->
   <section class="view" id="view-historique" hidden>
+    <button type="button" class="back" id="retourRapport">‹ Retour au rapport</button>
     <div class="panel">
       <h2>Rapports enregistrés</h2>
       <div class="list" id="histList"></div>
@@ -346,6 +545,7 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
     <div class="panel">
       <h2>Mon compte</h2>
       <div class="list" id="compteInfo"></div>
+      <p class="hint"><a href="https://batiria.github.io/BATIRIA-/cgv.html" target="_blank" rel="noopener">Conditions générales de vente et d'utilisation</a></p>
       <div class="btns">
         <button type="button" class="btn" id="pinChange">Changer mon code PIN</button>
         <button type="button" class="btn" id="pinLock">Verrouiller maintenant</button>
@@ -353,6 +553,7 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
       </div>
       <div class="hint">Le code PIN est redemandé toutes les 24 heures, sur chaque téléphone et chaque PC.</div>
     </div>
+    <div class="alert" id="reglagesInfo" hidden>Le mail du bureau, le nom, le logo et les modèles sont réglés par l'admin de ton entreprise, pour toute l'équipe.</div>
     <div class="panel">
       <h2>Connexion à Make</h2>
       <div class="hint">Gérée par Batiria, en sécurité sur le serveur : rien à régler sur ce téléphone.</div>
@@ -364,7 +565,7 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
       <label class="f">E-mail de l'admin (destinataire des rapports)<input type="text" inputmode="email" id="s-admin" autocomplete="off" placeholder="bureau@monentreprise.fr"></label>
       <label class="f">Copie à (optionnel)<input type="text" inputmode="email" id="s-cc" autocomplete="off" placeholder="conducteur@monentreprise.fr"></label>
       <input type="hidden" id="s-mailhook">
-      <div class="hint">Le bouton « Envoyer au bureau » envoie le rapport en PDF et en Word à cette adresse, sans rien demander au technicien.</div>
+      <div class="hint">Le bouton « Envoyer au bureau » envoie le rapport en PDF et en Word à cette adresse, sans rien demander au technicien. Réglé une fois par l'admin, valable pour toute l'équipe.</div>
     </div>
     <div class="panel">
       <h2>Mon entreprise</h2>
@@ -384,6 +585,12 @@ nav.tabs button{flex:1 0 auto;padding-inline:12px;white-space:nowrap}
     <div class="panel">
       <div class="row"><h2>Modèles clients</h2><button type="button" class="btn dark small" id="newModel">Nouveau</button></div>
       <div class="list" id="modelList"></div>
+    </div>
+    <div class="panel">
+      <h2>Tâches pour la saisie des heures</h2>
+      <div class="chips" id="tachesList"></div>
+      <div class="row" id="tachesAdd"><input type="text" id="tacheNew" placeholder="Ajouter une tâche" style="flex:1"><button type="button" class="btn small" id="tacheAddBtn">Ajouter</button></div>
+      <div class="hint">Ces tâches servent à la saisie des heures et à l'analyse des temps, pour toute l'équipe.</div>
     </div>
     <div class="panel" id="modelEditor" hidden>
       <div class="row"><h2 id="editorTitle">Nouveau modèle</h2><button type="button" class="btn ghost small" id="closeEditor">Fermer</button></div>
@@ -450,11 +657,27 @@ const S = {
 };
 
 /* ---------- Tabs ---------- */
-const TABS = ["chantiers", "rapport", "historique", "equipe", "reglages"];
+const TABS = ["chantiers", "planning", "analyse", "rapport", "historique", "equipe", "reglages", "batiria"];
+const ICONES = {
+  chantiers: '<path d="M3 21h18"/><path d="M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/>',
+  planning: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/>',
+  rapport: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/>',
+  historique: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  batiria: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  analyse: '<path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/>',
+  equipe: '<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.2A5 5 0 0 1 21 19"/>',
+  reglages: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>'
+};
+const NOMS_ONGLETS = { batiria: "Batiria", chantiers: "Chantiers", planning: "Planning", analyse: "Analyse", rapport: "Rapport", historique: "Historique", equipe: "Équipe", reglages: "Réglages" };
+TABS.forEach(t => { $("tab-" + t).innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONES[t]}</svg><span>${NOMS_ONGLETS[t]}</span>`; });
 TABS.forEach(t => $("tab-" + t).addEventListener("click", () => showTab(t)));
 function showTab(name){
   TABS.forEach(t => { $("tab-" + t).setAttribute("aria-selected", String(t === name)); $("view-" + t).hidden = t !== name; });
-  if (name === "chantiers" && ME.membre) chargerChantiers();
+  window.scrollTo(0, 0);
+  if (name === "chantiers" && ME.membre) { chargerChantiers(); renderAujourdhui(); }
+  if (name === "planning" && ME.membre) chargerPlanning();
+  if (name === "analyse" && ME.membre) chargerAnalyse();
+  if (name === "batiria" && ME.membre) chargerSA();
   if (name === "equipe" && ME.membre) chargerEquipe();
   if (name === "rapport") renderBanner();
   if (name === "historique") renderHistory();
@@ -913,7 +1136,9 @@ function renderHistory(){
     const it = document.createElement("div"); it.className = "item";
     it.innerHTML = `<div class="l"><strong>${esc(v.report.infos?.chantier || "Chantier")}</strong><span><span class="mono">${esc(v.meta.num)}</span> · ${esc(v.report.infos?.date || "")} · ${esc(v.meta.modelNom)}${v.meta.sentTo ? " · envoyé ✓" : ""}</span></div><div class="r"><button type="button" class="btn small">Ouvrir</button><button type="button" class="btn ghost small">${pendingDel === v.meta.num ? "Confirmer" : "Supprimer"}</button></div>`;
     const [o, d] = it.querySelectorAll("button");
-    o.addEventListener("click", () => { S.meta = v.meta; S.report = v.report; S.chantier = v.meta.chantier || null; S.photos = []; renderPhotos(); renderReport(); showTab("rapport"); $("captureBlock").hidden = true; $("resultBlock").hidden = false; if (v.nbPhotos) toast("Les photos ne sont pas gardées dans l'historique."); });
+    o.addEventListener("click", async () => { S.meta = v.meta; S.report = v.report; S.chantier = v.meta.chantier || null; S.photos = []; renderPhotos(); renderReport(); showTab("rapport"); $("captureBlock").hidden = true; $("resultBlock").hidden = false;
+      const n = ME.membre ? await rechargerPhotosRapport(v.meta) : 0;
+      if (n) { renderPhotos(); renderReport(); } else if (v.nbPhotos) toast("Les photos de ce rapport n'ont pas été gardées en ligne."); });
     d.addEventListener("click", () => { if (pendingDel !== v.meta.num) { pendingDel = v.meta.num; return renderHistory(); } pendingDel = null; const a = store.get("bat.hist", []); a.splice(idx, 1); store.set("bat.hist", a); renderHistory(); });
     box.appendChild(it);
   });
@@ -925,10 +1150,11 @@ $("s-webhook").addEventListener("change", () => { S.webhook = $("s-webhook").val
 $("s-key").addEventListener("change", () => { S.key = $("s-key").value; store.set("bat.key", S.key); toast("Code enregistré"); });
 const isMail = (m) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m);
 $("s-admin").value = S.admin; $("s-cc").value = S.cc; $("s-mailhook").value = S.mailhook;
-$("s-admin").addEventListener("change", () => { const v = $("s-admin").value.trim(); if (v && !isMail(v)) return toast("Cette adresse e-mail n'est pas valide."); S.admin = v; store.set("bat.admin", v); toast("E-mail de l'admin enregistré"); updateSendHint(); });
-$("s-cc").addEventListener("change", () => { const v = $("s-cc").value.trim(); if (v && !isMail(v)) return toast("Cette adresse e-mail n'est pas valide."); S.cc = v; store.set("bat.cc", v); toast("Copie enregistrée"); });
+$("s-admin").addEventListener("change", () => { const v = $("s-admin").value.trim(); if (v && !isMail(v)) return toast("Cette adresse e-mail n'est pas valide."); S.admin = v; store.set("bat.admin", v); updateSendHint(); sauverEntreprise({ admin_email: v || null }, "Mail du bureau enregistré pour toute l'équipe"); });
+$("s-cc").addEventListener("change", () => { const v = $("s-cc").value.trim(); if (v && !isMail(v)) return toast("Cette adresse e-mail n'est pas valide."); S.cc = v; store.set("bat.cc", v); sauverEntreprise({ cc_email: v || null }, "Copie enregistrée pour toute l'équipe"); });
 $("s-mailhook").addEventListener("change", () => { S.mailhook = $("s-mailhook").value.trim(); store.set("bat.mailhook", S.mailhook); toast("Webhook d'envoi enregistré"); updateSendHint(); });
 $("s-company").addEventListener("input", () => { S.company = $("s-company").value || "Mon entreprise"; store.set("bat.company", S.company); });
+$("s-company").addEventListener("change", () => { if ($("s-company").value.trim()) sauverEntreprise({ nom: $("s-company").value.trim() }, "Nom enregistré pour toute l'équipe"); });
 function renderCompany(){ $("logoRow").hidden = !S.logo; $("logoEmpty").hidden = !!S.logo; $("logoRemove").hidden = !S.logo; if (S.logo) $("logoPreview").src = S.logo; }
 $("s-logo").addEventListener("change", async (e) => {
   const f = e.target.files?.[0]; e.target.value = ""; if (!f) return;
@@ -936,13 +1162,13 @@ $("s-logo").addEventListener("change", async (e) => {
     const { im, u } = await loadImage(f); const r = Math.min(1, 800 / im.naturalWidth, 400 / im.naturalHeight);
     const c = document.createElement("canvas"); c.width = Math.round(im.naturalWidth * r); c.height = Math.round(im.naturalHeight * r);
     const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
-    S.logo = c.toDataURL("image/jpeg", 0.92);
-    if (!store.set("bat.logo", S.logo)) toast("Logo ajouté pour cette session, mais la mémoire du téléphone est pleine : il ne sera pas gardé.");
-    else toast("Logo ajouté : il apparaîtra sur le PDF et le Word");
+    S.logo = c.toDataURL("image/jpeg", 0.85);
+    store.set("bat.logo", S.logo);
+    sauverEntreprise({ logo_data: S.logo }, "Logo enregistré : il apparaîtra sur les rapports de toute l'équipe");
     renderCompany(); if (S.report) renderReport();
   } catch { toast("Ce logo n'a pas pu être lu. Essaie un PNG ou un JPG."); }
 });
-$("logoRemove").addEventListener("click", () => { S.logo = null; store.set("bat.logo", null); renderCompany(); if (S.report) renderReport(); toast("Logo retiré"); });
+$("logoRemove").addEventListener("click", () => { S.logo = null; store.set("bat.logo", null); renderCompany(); if (S.report) renderReport(); sauverEntreprise({ logo_data: null }, "Logo retiré pour toute l'équipe"); });
 
 let editing = null;
 function renderModelList(){
@@ -968,15 +1194,15 @@ $("saveModel").addEventListener("click", () => {
   const id = editing || "m" + Date.now().toString(36);
   const data = { id, nom, dest: $("m-dest").value.trim() || "client", ton: $("m-ton").value.trim() || "Professionnel et factuel.", sections, champs: $("m-champs").value.split("\n").map(s => s.trim()).filter(Boolean) };
   const i = custom.findIndex(x => x.id === id); if (i >= 0) custom[i] = data; else custom.push(data);
-  store.set("bat.models", custom); $("modelEditor").hidden = true; renderModelList(); renderModelSelect(); toast("Modèle enregistré");
+  store.set("bat.models", custom); $("modelEditor").hidden = true; renderModelList(); renderModelSelect(); sauverEntreprise({ modeles: custom }, "Modèle enregistré pour toute l'équipe");
 });
 $("deleteModel").addEventListener("click", () => {
   if ($("deleteModel").textContent !== "Confirmer la suppression") { $("deleteModel").textContent = "Confirmer la suppression"; return; }
-  custom = custom.filter(x => x.id !== editing); store.set("bat.models", custom); $("modelEditor").hidden = true; renderModelList(); renderModelSelect(); toast("Modèle supprimé");
+  custom = custom.filter(x => x.id !== editing); store.set("bat.models", custom); $("modelEditor").hidden = true; renderModelList(); renderModelSelect(); sauverEntreprise({ modeles: custom }, "Modèle supprimé pour toute l'équipe");
 });
 
 /* ---------- Install (PWA) ---------- */
-/* Version test : pas de service worker, pour ne pas toucher à l'appli en production. */
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
 let deferredPrompt = null;
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredPrompt = e; if (!standalone) $("installBox").hidden = false; });
@@ -997,7 +1223,7 @@ const SB_KEY = "sb_publishable_A1oglRzOaECG2O37X4gqwA_3fYrBEHc";
 const sb = window.supabase ? window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "implicit", storageKey: "bat.sb" } }) : null;
 const ROLES = { admin: "Admin", conducteur: "Conducteur / chargé d'affaires", chef: "Chef d'équipe", compagnon: "Compagnon" };
 const ME = { user: null, membre: null, entreprise: null };
-const C = { chantiers: [], membres: [], affectations: [], invitations: [], ouvert: null, rapports: [], confirm: null };
+const C = { chantiers: [], membres: [], affectations: [], invitations: [], ouvert: null, rapports: [], confirm: null, fichiers: [], dosTab: "photos", urls: {}, sous: "dossier" };
 S.chantier = null;
 const peut = {
   creer: () => ["admin", "conducteur"].includes(ME.membre?.role),
@@ -1016,7 +1242,7 @@ function frDate(iso){ const m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2}
 /* --- Connexion par code --- */
 let authEmail = "";
 function authMsg(m){ $("a-msg").textContent = m; $("a-msg").hidden = !m; }
-function authStep(step){ ["a-email", "a-code", "a-wait", "a-off", "a-pin"].forEach(id => $(id).hidden = id !== step); authMsg(""); }
+function authStep(step){ ["a-email", "a-code", "a-wait", "a-off", "a-pin", "a-cgv"].forEach(id => $(id).hidden = id !== step); authMsg(""); }
 function showAuth(step){ $("authView").hidden = false; $("appView").hidden = true; authStep(step); }
 $("a-send").addEventListener("click", async () => {
   const email = $("a-mail").value.trim().toLowerCase();
@@ -1043,6 +1269,7 @@ $("a-token").addEventListener("keydown", (e) => { if (e.key === "Enter") $("a-ve
 $("a-back").addEventListener("click", () => authStep("a-email"));
 $("a-retry").addEventListener("click", () => location.reload());
 async function deconnecter(msg){
+  clearInterval(N.timer); $("notifBtn").hidden = true; $("notifPanel").hidden = true;
   clearTimeout(PIN.timer); PIN.fin = null; PIN.change = false;
   try { await sb.rpc("verrouiller"); } catch {}
   try { await sb.auth.signOut(); } catch {}
@@ -1129,7 +1356,7 @@ async function chargerSession(){
   ME.user = session.user;
   const { data: e, error } = await sb.rpc("etat_pin");
   if (error) { showAuth("a-off"); $("a-offTxt").textContent = /etat_pin|function|schema cache/i.test(error.message) ? "Le code PIN n'est pas encore installé dans la base : lance le script 03 dans Supabase." : "Impossible de charger ton compte : " + error.message; return; }
-  if (!e.membre) { showAuth("a-wait"); $("a-waitMail").textContent = ME.user.email; return; }
+  if (!e.membre) return afficherAttente();
   if (e.bloque && !e.reconnecte_depuis_blocage) return deconnecter("Code PIN bloqué. Reconnecte-toi avec un code reçu par mail, puis choisis un nouveau PIN.");
   if (!e.a_pin || e.bloque) { PIN.change = false; return pinShow("creer1"); }
   if (e.valide_jusqua) return ouvrirApp(e.valide_jusqua);
@@ -1140,17 +1367,23 @@ async function ouvrirApp(fin){
   PIN.timer = setTimeout(() => verrouillerLocal(), Math.max(1000, Math.min(PIN.fin - Date.now(), 2147000000)));
   if (PIN.change && ME.membre) { PIN.change = false; $("authView").hidden = true; $("appView").hidden = false; return; }
   PIN.change = false;
-  const { data, error } = await sb.from("membres").select("user_id, role, nom, email, entreprise_id, entreprises(nom, actif)").eq("user_id", ME.user.id).maybeSingle();
+  const { data, error } = await sb.from("membres").select("user_id, role, nom, email, entreprise_id, entreprises(*)").eq("user_id", ME.user.id).maybeSingle();
   if (error) { showAuth("a-off"); $("a-offTxt").textContent = "Impossible de charger ton compte : " + error.message; return; }
   if (!data || !data.entreprises) { showAuth("a-wait"); $("a-waitMail").textContent = ME.user.email; return; }
   ME.membre = data; ME.entreprise = data.entreprises;
+  if (data.role === "admin" && "cgv_acceptees_at" in ME.entreprise && !ME.entreprise.cgv_acceptees_at) { showAuth("a-cgv"); return; }
   $("authView").hidden = true; $("appView").hidden = false;
-  if (S.company === "Mon entreprise") { S.company = ME.entreprise.nom; store.set("bat.company", S.company); $("s-company").value = S.company; }
+  await appliquerEntreprise();
   $("companyLabel").textContent = `${ME.entreprise.nom} · ${ROLES[data.role]}`;
   $("tab-equipe").hidden = !peut.admin();
+  $("tab-analyse").hidden = !["admin", "conducteur"].includes(data.role);
+  $("tab-historique").hidden = true;
+  sb.rpc("est_super_admin").then(({ data: sa }) => { $("tab-batiria").hidden = !sa; });
   $("tab-rapport").hidden = !peut.rapport();
   $("chNew").hidden = !peut.creer();
   renderCompte();
+  chargerEquipes();
+  demarrerNotifs();
   showTab("chantiers");
 }
 if (sb) sb.auth.onAuthStateChange((evt) => { if (evt === "SIGNED_OUT" && $("a-email").hidden && $("a-code").hidden) setTimeout(() => { if ($("a-email").hidden && $("a-code").hidden) showAuth("a-email"); }, 0); });
@@ -1186,21 +1419,35 @@ function renderChantiers(){
 }
 async function renderDetail(){
   const box = $("chDetail"), c = C.chantiers.find(x => x.id === C.ouvert);
+  $("chListPanel").hidden = !!c; $("chNew").hidden = !!c || !peut.creer();
+  if (c) $("jourPanel").hidden = true;
   if (!c) { box.hidden = true; box.innerHTML = ""; return; }
   const g = gere(c), aff = new Set(C.affectations.filter(a => a.chantier_id === c.id).map(a => a.user_id));
-  let h = `<div class="row"><div class="tag"><b>→</b>Dossier chantier</div><button type="button" class="btn ghost small" data-act="fermer">Fermer</button></div><h2>${esc(c.nom)}</h2>`;
-  if (g) h += `<div class="grid2"><label class="f">Nom<input type="text" id="cd-nom" value="${esc(c.nom)}"></label><label class="f">Client<input type="text" id="cd-client" value="${esc(c.client || "")}"></label></div><div class="grid2"><label class="f">Adresse<input type="text" id="cd-adresse" value="${esc(c.adresse || "")}"></label><label class="f">Ville<input type="text" id="cd-ville" value="${esc(c.ville || "")}"></label></div><button type="button" class="btn small" data-act="maj" data-id="${c.id}">Enregistrer les infos</button>`;
+  const vis = (k) => C.sous === k ? "" : " hidden";
+  let h = `<button type="button" class="back" data-act="fermer">‹ Mes chantiers</button>
+    <div class="ch-head"><h2>${esc(c.nom)}</h2><div class="hint">${esc([[c.adresse, c.ville].filter(Boolean).join(", "), c.client].filter(Boolean).join(" · ") || "Pas d'adresse renseignée")}</div></div>
+    <div class="seg">${[["dossier", "Dossier"], ["heures", "Heures"], ...(g ? [["analyse", "Analyse"]] : []), ["rapports", "Rapports"], ["infos", "Infos"]].map(([k, v]) => `<button type="button" data-act="sous" data-t="${k}" aria-pressed="${C.sous === k}">${v}</button>`).join("")}</div>`;
+  // Dossier
+  h += `<div class="sous" data-sous="dossier"${vis("dossier")}><div class="seg">${[["plans", "Plans & détails"], ["photos", "Photos"], ["notes", "Notes"]].map(([k, v]) => `<button type="button" data-act="dtab" data-t="${k}" aria-pressed="${C.dosTab === k}">${v}</button>`).join("")}</div>
+    <div id="cdDossier"><div class="empty">Chargement…</div></div></div>`;
+  // Heures
+  h += `<div class="sous" data-sous="heures"${vis("heures")}><div id="cdHeures"><div class="empty">Chargement…</div></div></div>`;
+  // Analyse (admin / conducteur)
+  if (g) h += `<div class="sous" data-sous="analyse"${vis("analyse")}><div id="cdAnalyse"><div class="empty">Chargement…</div></div></div>`;
+  // Rapports
+  h += `<div class="sous" data-sous="rapports"${vis("rapports")}>${peut.rapport() ? `<button type="button" class="btn primary" data-act="rapport" data-id="${c.id}">Faire un rapport vocal</button>` : ""}<div class="list" id="cdRapports"><div class="empty">Chargement…</div></div></div>`;
+  // Infos
+  h += `<div class="sous" data-sous="infos"${vis("infos")}>`;
+  if (g) h += `<div class="grid2"><label class="f">Nom<input type="text" id="cd-nom" value="${esc(c.nom)}"></label><label class="f">Client<input type="text" id="cd-client" value="${esc(c.client || "")}"></label></div><div class="grid2"><label class="f">Adresse<input type="text" id="cd-adresse" value="${esc(c.adresse || "")}"></label><label class="f">Ville<input type="text" id="cd-ville" value="${esc(c.ville || "")}"></label></div><button type="button" class="btn" data-act="maj" data-id="${c.id}">Enregistrer les infos</button>`;
   else h += `<div class="list">${[["Adresse", [c.adresse, c.ville].filter(Boolean).join(", ")], ["Client", c.client]].filter(x => x[1]).map(([k, v]) => `<div class="item"><div class="l"><span>${esc(k)}</span><strong>${esc(v)}</strong></div></div>`).join("") || `<div class="empty">Pas d'informations complémentaires.</div>`}</div>`;
-  h += `<div class="tag" style="margin-top:6px"><b>01</b>Personnes affectées</div>`;
+  h += `<div class="tag" style="margin-top:10px"><b>→</b>Personnes affectées</div>`;
   const actifs = C.membres.filter(m => m.actif);
   if (g) h += `<div class="chips">${actifs.map(m => `<button type="button" class="chip" data-act="aff" data-id="${c.id}" data-u="${m.user_id}" aria-pressed="${aff.has(m.user_id)}">${esc(m.nom || m.email)} · ${esc(ROLES[m.role].split(" ")[0])}</button>`).join("")}</div><div class="hint">Touche une personne pour l'affecter ou la retirer. Elle ne voit que les chantiers où elle est affectée.</div>`;
   else h += `<div class="hint">${esc(actifs.filter(m => aff.has(m.user_id)).map(m => m.nom || m.email).join(", ") || "Personne")}</div>`;
-  h += `<div class="tag" style="margin-top:6px"><b>02</b>Rapports du chantier</div><div class="list" id="cdRapports"><div class="empty">Chargement…</div></div>`;
-  const btns = [];
-  if (peut.rapport()) btns.push(`<button type="button" class="btn primary" data-act="rapport" data-id="${c.id}">Faire un rapport vocal</button>`);
-  if (peut.admin()) btns.push(`<button type="button" class="btn ghost" data-act="suppr" data-id="${c.id}">${C.confirm === "ch:" + c.id ? "Confirmer la suppression" : "Supprimer le chantier"}</button>`);
-  if (btns.length) h += `<div class="btns">${btns.join("")}</div>`;
+  if (peut.admin()) h += `<button type="button" class="btn ghost" data-act="suppr" data-id="${c.id}">${C.confirm === "ch:" + c.id ? "Confirmer la suppression" : "Supprimer le chantier"}</button>`;
+  h += `</div>`;
   box.innerHTML = h; box.hidden = false;
+  chargerDossier(c); chargerHeures(c); if (g) { A.apercu = null; A.manuel = false; chargerAnalyseChantier(c); }
   const { data, error } = await sb.from("rapports").select("id, numero, date_rapport, auteur, envoye_at, contenu").eq("chantier_id", c.id).order("created_at", { ascending: false });
   const rb = $("cdRapports"); if (!rb || C.ouvert !== c.id) return;
   C.rapports = data || [];
@@ -1211,8 +1458,9 @@ async function renderDetail(){
 $("view-chantiers").addEventListener("click", async (e) => {
   const b = e.target.closest("[data-act]"); if (!b) return;
   const act = b.dataset.act, id = b.dataset.id, c = C.chantiers.find(x => x.id === id);
-  if (act === "ouvrir") { C.ouvert = id; C.confirm = null; renderDetail(); $("chDetail").scrollIntoView({ block: "start" }); }
-  else if (act === "fermer") { C.ouvert = null; renderDetail(); }
+  if (act === "ouvrir") { C.ouvert = id; C.confirm = null; C.sous = "dossier"; H.draft = null; renderDetail(); window.scrollTo(0, 0); }
+  else if (act === "fermer") { C.ouvert = null; renderDetail(); renderAujourdhui(); window.scrollTo(0, 0); }
+  else if (act === "sous") { C.sous = b.dataset.t; C.confirm = null; document.querySelectorAll('[data-act="sous"]').forEach(x => x.setAttribute("aria-pressed", String(x.dataset.t === C.sous))); document.querySelectorAll("#chDetail .sous").forEach(x => x.hidden = x.dataset.sous !== C.sous); window.scrollTo(0, 0); }
   else if (act === "rapport" && c) choisirChantier(c);
   else if (act === "maj" && c) {
     const nom = $("cd-nom").value.trim(); if (!nom) return toast("Le chantier doit avoir un nom.");
@@ -1234,12 +1482,20 @@ $("view-chantiers").addEventListener("click", async (e) => {
     if (error) return toast("Suppression impossible : " + error.message);
     C.ouvert = null; toast("Chantier supprimé"); chargerChantiers();
   }
+  else if (act === "dtab") { C.dosTab = b.dataset.t; C.confirm = null; document.querySelectorAll('[data-act="dtab"]').forEach(x => x.setAttribute("aria-pressed", String(x.dataset.t === C.dosTab))); renderDossier(); }
+  else if (act === "fopen") ouvrirFichier(id);
+  else if (["aImport", "aManuel", "aAnnuler", "aAjout", "aSave", "aSuppr"].includes(act)) actionAnalyse(act, b);
+  else if (act.startsWith("h") && ["hSaisir", "hAnnuler", "hMbr", "hAddMbr", "hStep", "hEnvoyer", "hValider", "hSuppr"].includes(act)) actionHeures(act, b);
+  else if (act === "fsuppr") supprimerFichier(id);
+  else if (act === "fchoisir") $(b.dataset.input)?.click();
+  else if (act === "noteAdd") ajouterNote();
   else if (act === "voir") {
     const r = C.rapports.find(x => x.id === id), ch = C.chantiers.find(x => x.id === C.ouvert);
     if (!r || !r.contenu?.report) return toast("Ce rapport ne peut pas être ouvert.");
     S.report = r.contenu.report; S.meta = Object.assign({}, r.contenu.meta || {}, { dbId: r.id }); S.chantier = ch || null;
     S.photos = []; renderPhotos(); renderReport(); showTab("rapport"); $("captureBlock").hidden = true; $("resultBlock").hidden = false; window.scrollTo(0, 0);
-    toast("Les photos ne sont pas encore gardées en ligne (étape suivante).");
+    const n = await rechargerPhotosRapport(r.contenu.meta);
+    if (n) { renderPhotos(); renderReport(); }
   }
 });
 $("ch-create").addEventListener("click", async () => {
@@ -1253,11 +1509,723 @@ $("ch-create").addEventListener("click", async () => {
   } finally { b.disabled = false; }
 });
 
+/* --- Réglages de l'entreprise (en ligne, communs à toute l'équipe) --- */
+async function appliquerEntreprise(){
+  const e = ME.entreprise, admin = peut.admin();
+  if (admin) {
+    // Première fois : l'admin met en ligne les réglages déjà présents sur son appareil
+    const maj = {};
+    if (!e.admin_email && S.admin) maj.admin_email = S.admin;
+    if (!e.cc_email && S.cc) maj.cc_email = S.cc;
+    if (!e.logo_data && S.logo) maj.logo_data = S.logo;
+    if ((!Array.isArray(e.modeles) || !e.modeles.length) && custom.length) maj.modeles = custom;
+    if (Object.keys(maj).length) {
+      const { error } = await sb.from("entreprises").update(maj).eq("id", ME.membre.entreprise_id);
+      if (!error) { Object.assign(e, maj); toast("Tes réglages ont été mis en ligne pour toute l'équipe"); }
+    }
+  }
+  S.company = e.nom || S.company; S.admin = e.admin_email || ""; S.cc = e.cc_email || "";
+  S.logo = e.logo_data || null; custom = Array.isArray(e.modeles) ? e.modeles : [];
+  TACHES = Array.isArray(e.taches) ? e.taches : []; renderTaches();
+  $("s-company").value = S.company; $("s-admin").value = S.admin; $("s-cc").value = S.cc;
+  renderCompany(); renderModelList(); renderModelSelect(); updateSendHint();
+  $("view-reglages").classList.toggle("lecture", !admin);
+  ["s-company", "s-admin", "s-cc", "s-logo"].forEach(id => $(id).disabled = !admin);
+  $("reglagesInfo").hidden = admin;
+}
+async function sauverEntreprise(maj, ok){
+  if (!ME.membre || !peut.admin()) { toast("Seul l'admin de l'entreprise peut changer ce réglage."); return false; }
+  const { error } = await sb.from("entreprises").update(maj).eq("id", ME.membre.entreprise_id);
+  if (error) { toast("Pas enregistré en ligne : " + error.message); return false; }
+  Object.assign(ME.entreprise, maj); if (ok) toast(ok); return true;
+}
+
+/* --- Tâches, équipes, planning, notifications, heures --- */
+let TACHES = [];
+const JOURS = ["Lun", "Mar", "Mer", "Jeu", "Ven"];
+const MOMENTS = { journee: "Journée", matin: "Matin", apres_midi: "Après-midi" };
+const isoJour = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const lundiDe = (d) => { const x = new Date(d); x.setHours(12, 0, 0, 0); const k = (x.getDay() + 6) % 7; x.setDate(x.getDate() - k); return x; };
+const plusJours = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const frJour = (iso) => { const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}` : iso; };
+const fh = (h) => (Math.round(h * 10) / 10).toString().replace(".", ",") + " h";
+const planifie = () => ["admin", "conducteur"].includes(ME.membre?.role);
+const P = { lundi: lundiDe(new Date()), rows: [], equipes: [], edit: null, split: false, eqEdit: null };
+
+async function chargerEquipes(){
+  const { data, error } = await sb.from("equipes").select("*").order("nom");
+  if (!error) P.equipes = data || [];
+  return P.equipes;
+}
+
+/* Planning */
+async function chargerPlanning(){
+  const fin = plusJours(P.lundi, 4);
+  await Promise.all([chargerEquipes(), C.chantiers.length ? null : chargerChantiers()]);
+  const { data, error } = await sb.from("planning").select("*").gte("jour", isoJour(P.lundi)).lte("jour", isoJour(fin));
+  if (error) toast("Planning indisponible : " + error.message);
+  P.rows = data || [];
+  renderPlanning();
+}
+function celluleTexte(eqId, jour){
+  const r = (m) => P.rows.find(x => x.equipe_id === eqId && x.jour === jour && x.moment === m);
+  const j = r("journee"), am = r("matin"), pm = r("apres_midi");
+  const lib = (x) => x ? `<b>${esc(x.chantier_nom || "Libre")}</b>${x.tache ? `<small>${esc(x.tache)}</small>` : ""}` : `<b class="muted">Libre</b>`;
+  if (am || pm) return `<small>Matin</small>${lib(am)}<small>Après-midi</small>${lib(pm)}`;
+  if (j) return `${lib(j)}`;
+  return null;
+}
+function renderPlanning(){
+  const fin = plusJours(P.lundi, 4), auj = isoJour(new Date());
+  $("plTitre").textContent = `Semaine du ${frJour(isoJour(P.lundi))} au ${frJour(isoJour(fin))}`;
+  $("plLecture").hidden = planifie();
+  $("plEquipes").hidden = !planifie();
+  const box = $("plGrid");
+  if (!P.equipes.length) { box.innerHTML = `<div class="empty">${planifie() ? "Aucune équipe pour l'instant. Crée ta première équipe ci-dessous." : "Aucune équipe pour l'instant."}</div>`; renderEquipesPl(); return; }
+  box.innerHTML = P.equipes.map(e => {
+    let h = `<div class="pl-eq"><div class="row"><h3>${esc(e.nom)}</h3><span class="hint">${esc([e.chef_id ? "Chef : " + nomDe(e.chef_id) : "", (e.membres || []).join(", ")].filter(Boolean).join(" · "))}</span></div>`;
+    for (let i = 0; i < 5; i++) {
+      const jour = isoJour(plusJours(P.lundi, i)), key = e.id + "|" + jour, txt = celluleTexte(e.id, jour);
+      h += `<div class="pl-day${jour === auj ? " auj" : ""}"><span class="pl-d">${JOURS[i]} ${frJour(jour)}</span><div>`;
+      if (P.edit === key && planifie()) h += editeurCellule(e.id, jour);
+      else if (planifie()) h += `<button type="button" class="slot${txt ? " full" : ""}" data-pl="edit" data-k="${key}">${txt || "+ Affecter"}</button>`;
+      else h += `<div class="slot${txt ? " full" : ""}">${txt || "Libre"}</div>`;
+      h += `</div></div>`;
+    }
+    return h + `</div>`;
+  }).join("");
+  renderEquipesPl();
+}
+function editeurCellule(eqId, jour){
+  const r = (m) => P.rows.find(x => x.equipe_id === eqId && x.jour === jour && x.moment === m) || {};
+  const chs = C.chantiers;
+  const sel = (id, cur) => `<select id="${id}" aria-label="Chantier"><option value="">Libre</option>${chs.map(c => `<option value="${c.id}"${c.id === cur ? " selected" : ""}>${esc(c.nom)}</option>`).join("")}</select>`;
+  const demi = (titre, x, pre) => `<div class="pl-half"><span class="pl-d">${titre}</span>${sel(pre + "c", x.chantier_id)}<input type="text" id="${pre}t" list="dlTaches" placeholder="Tâche prévue (facultatif)" value="${esc(x.tache || "")}"></div>`;
+  const j = r("journee"), am = r("matin"), pm = r("apres_midi");
+  const h = P.split ? demi("Matin", am.chantier_id || am.tache ? am : j, "pe-am") + demi("Après-midi", pm, "pe-pm") : demi("Journée entière", j.chantier_id || j.tache ? j : am, "pe-am");
+  return `<div class="pl-edit">${h}<div class="btns"><button type="button" class="btn primary small" data-pl="save">Enregistrer</button><button type="button" class="btn small" data-pl="split">${P.split ? "Journée entière" : "Couper ½ journée"}</button><button type="button" class="btn ghost small" data-pl="vider">Vider</button><button type="button" class="btn ghost small" data-pl="fermer">Fermer</button></div></div>`;
+}
+async function enregistrerCellule(vider){
+  const [eqId, jour] = P.edit.split("|");
+  const val = (pre) => ({ c: $(pre + "c")?.value || null, t: ($(pre + "t")?.value || "").trim() || null });
+  const parts = vider ? [] : (P.split ? [["matin", val("pe-am")], ["apres_midi", val("pe-pm")]] : [["journee", val("pe-am")]]);
+  const garder = parts.filter(([, v]) => v.c || v.t);
+  const enlever = ["journee", "matin", "apres_midi"].filter(m => !garder.some(([g]) => g === m));
+  if (enlever.length) {
+    const { error } = await sb.from("planning").delete().eq("equipe_id", eqId).eq("jour", jour).in("moment", enlever);
+    if (error) return toast("Planning non enregistré : " + error.message);
+  }
+  if (garder.length) {
+    const { error } = await sb.from("planning").upsert(garder.map(([m, v]) => ({ equipe_id: eqId, jour, moment: m, chantier_id: v.c, tache: v.t })), { onConflict: "equipe_id,jour,moment" });
+    if (error) return toast("Planning non enregistré : " + error.message);
+  }
+  const eq = P.equipes.find(e => e.id === eqId);
+  toast(vider ? "Journée vidée" : eq?.chef_id ? "Planning enregistré · le chef d'équipe est prévenu" : "Planning enregistré");
+  P.edit = null; chargerPlanning();
+}
+$("view-planning").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-pl]"); if (!b) return;
+  const a = b.dataset.pl;
+  if (a === "prev") { P.lundi = plusJours(P.lundi, -7); P.edit = null; chargerPlanning(); }
+  else if (a === "next") { P.lundi = plusJours(P.lundi, 7); P.edit = null; chargerPlanning(); }
+  else if (a === "now") { P.lundi = lundiDe(new Date()); P.edit = null; chargerPlanning(); }
+  else if (a === "edit") { P.edit = b.dataset.k; const [eqId, jour] = P.edit.split("|"); P.split = P.rows.some(x => x.equipe_id === eqId && x.jour === jour && x.moment !== "journee"); renderPlanning(); }
+  else if (a === "split") { P.split = !P.split; renderPlanning(); }
+  else if (a === "fermer") { P.edit = null; renderPlanning(); }
+  else if (a === "save") enregistrerCellule(false);
+  else if (a === "vider") enregistrerCellule(true);
+  else if (a === "eqEdit") { P.eqEdit = b.dataset.id; renderEquipesPl(); }
+  else if (a === "eqAnnuler") { P.eqEdit = null; renderEquipesPl(); }
+  else if (a === "eqSave") sauverEquipe(b.dataset.id || null);
+  else if (a === "eqSuppr") {
+    if (b.dataset.confirm !== "1") { b.dataset.confirm = "1"; b.textContent = "Confirmer"; return; }
+    const { error } = await sb.from("equipes").delete().eq("id", b.dataset.id);
+    if (error) return toast("Suppression impossible : " + error.message);
+    P.eqEdit = null; toast("Équipe supprimée"); chargerPlanning();
+  }
+});
+
+/* Équipes (dans l'onglet Planning, pour l'admin et les conducteurs) */
+function formEquipe(e){
+  const id = e?.id || "new";
+  const chefs = C.membres.filter(m => m.actif);
+  return `<div class="pl-edit"><label class="f">Nom de l'équipe<input type="text" id="eqn-${id}" value="${esc(e?.nom || "")}" placeholder="Ex. : Équipe Paul"></label>
+    <label class="f">Chef d'équipe (reçoit les notifications)<select id="eqc-${id}"><option value="">Aucun</option>${chefs.map(m => `<option value="${m.user_id}"${m.user_id === e?.chef_id ? " selected" : ""}>${esc(m.nom || m.email)} · ${esc(ROLES[m.role].split(" ")[0])}</option>`).join("")}</select></label>
+    <label class="f">Compagnons (séparés par des virgules)<input type="text" id="eqm-${id}" value="${esc((e?.membres || []).join(", "))}" placeholder="Ex. : Ali, Kevin, Hugo"></label>
+    <div class="btns"><button type="button" class="btn primary small" data-pl="eqSave" data-id="${e?.id || ""}">${e ? "Enregistrer" : "Créer l'équipe"}</button>${e ? `<button type="button" class="btn ghost small" data-pl="eqAnnuler">Annuler</button><button type="button" class="btn ghost small" data-pl="eqSuppr" data-id="${e.id}">Supprimer</button>` : ""}</div></div>`;
+}
+function renderEquipesPl(){
+  const box = $("plEqList"); if (!box || !planifie()) return;
+  box.innerHTML = P.equipes.map(e => P.eqEdit === e.id ? formEquipe(e)
+    : `<div class="item"><div class="l"><strong>${esc(e.nom)}</strong><span>${esc([e.chef_id ? "Chef : " + nomDe(e.chef_id) : "Pas de chef désigné", (e.membres || []).join(", ")].filter(Boolean).join(" · "))}</span></div><div class="r"><button type="button" class="btn small" data-pl="eqEdit" data-id="${e.id}">Modifier</button></div></div>`).join("")
+    + `<div class="tag" style="margin-top:8px"><b>+</b>Nouvelle équipe</div>` + formEquipe(null);
+}
+async function sauverEquipe(id){
+  const k = id || "new", nom = $("eqn-" + k).value.trim();
+  if (!nom) return toast("Donne un nom à l'équipe.");
+  const row = { nom, chef_id: $("eqc-" + k).value || null, membres: $("eqm-" + k).value.split(",").map(s => s.trim()).filter(Boolean) };
+  const { error } = id ? await sb.from("equipes").update(row).eq("id", id) : await sb.from("equipes").insert(row);
+  if (error) return toast("Équipe non enregistrée : " + error.message);
+  P.eqEdit = null; toast(id ? "Équipe enregistrée" : "Équipe créée"); chargerPlanning();
+}
+
+/* « Aujourd'hui » : où va mon équipe */
+async function renderAujourdhui(){
+  const box = $("jourPanel"); if (!box || !ME.membre) return;
+  await chargerEquipes();
+  const mes = P.equipes.filter(e => e.chef_id === ME.user.id);
+  if (!mes.length || C.ouvert) { box.hidden = true; return; }
+  const auj = isoJour(new Date());
+  const { data } = await sb.from("planning").select("*").eq("jour", auj).in("equipe_id", mes.map(e => e.id));
+  const rows = data || [];
+  box.innerHTML = `<div class="tag"><b>→</b>Aujourd'hui · ${frJour(auj)}</div>` + mes.map(e => {
+    const r = rows.filter(x => x.equipe_id === e.id).sort((a, b) => a.moment.localeCompare(b.moment));
+    return `<div class="item"><div class="l"><strong>${esc(e.nom)}</strong><span>${r.length ? r.map(x => `${MOMENTS[x.moment]} : ${esc(x.chantier_nom || "Libre")}${x.tache ? " — " + esc(x.tache) : ""}`).join(" · ") : "Rien de prévu aujourd'hui."}</span></div></div>`;
+  }).join("");
+  box.hidden = false;
+}
+
+/* Notifications */
+const N = { liste: [], timer: null };
+async function chargerNotifs(){
+  if (!ME.membre) return;
+  const { data, error } = await sb.from("notifications").select("*").order("created_at", { ascending: false }).limit(30);
+  if (error) return;
+  N.liste = data || [];
+  const nb = N.liste.filter(n => !n.lu).length;
+  $("notifBtn").hidden = false; $("notifNb").hidden = !nb; $("notifNb").textContent = nb > 9 ? "9+" : nb;
+  if (!$("notifPanel").hidden) renderNotifs();
+}
+function renderNotifs(){
+  $("notifPanel").innerHTML = `<div class="row"><div class="tag"><b>→</b>Notifications</div><button type="button" class="btn ghost small" data-notif="fermer">Fermer</button></div>`
+    + (N.liste.length ? `<div class="list">${N.liste.map(n => `<div class="item"><div class="l"><strong${n.lu ? ' class="muted"' : ""}>${esc(n.texte)}</strong><span>${esc(dateCourte(n.created_at))}</span></div></div>`).join("")}</div>` : `<div class="empty">Aucune notification.</div>`);
+}
+$("notifBtn").addEventListener("click", async () => {
+  const p = $("notifPanel"); p.hidden = !p.hidden;
+  if (!p.hidden) {
+    renderNotifs(); window.scrollTo(0, 0);
+    const ids = N.liste.filter(n => !n.lu).map(n => n.id);
+    if (ids.length) { await sb.from("notifications").update({ lu: true }).in("id", ids); N.liste.forEach(n => n.lu = true); $("notifNb").hidden = true; }
+  }
+});
+$("notifPanel").addEventListener("click", (e) => { if (e.target.closest('[data-notif="fermer"]')) $("notifPanel").hidden = true; });
+function demarrerNotifs(){ clearInterval(N.timer); chargerNotifs(); N.timer = setInterval(chargerNotifs, 60000); }
+document.addEventListener("visibilitychange", () => { if (!document.hidden && ME.membre) chargerNotifs(); });
+
+/* Tâches (Réglages, admin) */
+function renderTaches(){
+  const box = $("tachesList"); if (!box) return;
+  const admin = peut.admin();
+  box.innerHTML = TACHES.map((t, i) => `<span class="chip" aria-pressed="false">${esc(t)}${admin ? ` <button type="button" class="chip-x" data-tache-x="${i}" aria-label="Retirer ${esc(t)}">✕</button>` : ""}</span>`).join("");
+  $("tachesAdd").hidden = !admin;
+  $("dlTaches").innerHTML = TACHES.map(t => `<option value="${esc(t)}">`).join("");
+}
+$("tachesList").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-tache-x]"); if (!b) return;
+  const t = TACHES.slice(); t.splice(Number(b.dataset.tacheX), 1); TACHES = t; renderTaches();
+  sauverEntreprise({ taches: TACHES }, "Tâche retirée");
+});
+$("tacheAddBtn").addEventListener("click", () => {
+  const v = $("tacheNew").value.trim(); if (!v) return;
+  if (TACHES.includes(v)) return toast("Cette tâche existe déjà.");
+  TACHES = TACHES.concat(v); $("tacheNew").value = ""; renderTaches();
+  sauverEntreprise({ taches: TACHES }, "Tâche ajoutée");
+});
+
+/* Heures (dans le dossier chantier) */
+const H = { liste: [], draft: null };
+async function chargerHeures(c){
+  const { data, error } = await sb.from("journees").select("*").eq("chantier_id", c.id).order("jour", { ascending: false }).order("created_at", { ascending: false });
+  if (C.ouvert !== c.id) return;
+  if (error) { const box = $("cdHeures"); if (box) box.innerHTML = `<div class="empty">Heures indisponibles : ${esc(error.message)}</div>`; return; }
+  H.liste = data || [];
+  renderHeures();
+}
+const totalJournee = (j) => (j.lignes || []).reduce((s, l) => s + (Number(l.h) || 0), 0) * Math.max(1, (j.equipe || []).length);
+function renderHeures(){
+  const box = $("cdHeures"), c = C.chantiers.find(x => x.id === C.ouvert); if (!box || !c) return;
+  let h = "";
+  if (H.draft && H.draft.chantier === c.id) h += formHeures(c);
+  else if (peut.rapport()) h += `<button type="button" class="btn primary" data-act="hSaisir">Saisir une journée</button>`;
+  const parTache = {};
+  H.liste.forEach(j => { const n = Math.max(1, (j.equipe || []).length); (j.lignes || []).forEach(l => { parTache[l.tache] = (parTache[l.tache] || 0) + (Number(l.h) || 0) * n; }); });
+  const ents = Object.entries(parTache).sort((a, b) => b[1] - a[1]), max = Math.max(1, ...ents.map(x => x[1]));
+  if (ents.length) h += `<div class="hbars">${ents.map(([t, v]) => `<div class="hbar"><div class="row"><span>${esc(t)}</span><b>${fh(v)}</b></div><div class="track"><div style="width:${(v / max * 100).toFixed(1)}%"></div></div></div>`).join("")}<div class="hint">Total : <b>${fh(ents.reduce((s, x) => s + x[1], 0))}</b> (heures × nombre de personnes)</div></div>`;
+  h += H.liste.length ? `<div class="list">${H.liste.map(j => {
+    const peutSuppr = gere(c) || j.auteur === ME.user.id;
+    return `<div class="item"><div class="l"><strong>${esc(frDate(j.jour))} · ${fh(totalJournee(j))} <span class="pill ok">Validée</span></strong><span>${esc((j.equipe || []).join(", ") || "—")} · ${esc((j.lignes || []).map(l => `${l.tache} ${fh(Number(l.h) || 0)}`).join(", "))}${j.note ? " · " + esc(j.note) : ""}</span><span>saisie et validée par ${esc(nomDe(j.auteur))}</span></div><div class="r">${peutSuppr ? `<button type="button" class="btn ghost small" data-act="hSuppr" data-id="${j.id}">${C.confirm === "h:" + j.id ? "Confirmer" : "Supprimer"}</button>` : ""}</div></div>`;
+  }).join("")}</div>` : `<div class="empty">Aucune heure saisie sur ce chantier.</div>`;
+  box.innerHTML = h;
+}
+function formHeures(c){
+  const d = H.draft;
+  const proposes = Array.from(new Set([...(P.equipes.find(e => e.id === d.equipeId)?.membres || []), ...d.equipe]));
+  return `<div class="dos-add">
+    <div class="grid2"><label class="f">Date<input type="date" id="hDate" value="${esc(d.jour)}"></label>
+    <label class="f">Équipe<select id="hEquipe"><option value="">Choisir…</option>${P.equipes.map(e => `<option value="${e.id}"${e.id === d.equipeId ? " selected" : ""}>${esc(e.nom)}</option>`).join("")}</select></label></div>
+    <div class="f">Présents (${d.equipe.length})</div>
+    <div class="chips">${proposes.map(n => `<button type="button" class="chip" data-act="hMbr" data-n="${esc(n)}" aria-pressed="${d.equipe.includes(n)}">${esc(n)}</button>`).join("") || `<span class="hint">Choisis une équipe ou ajoute des noms.</span>`}</div>
+    <div class="row"><input type="text" id="hAutre" placeholder="Ajouter une personne" style="flex:1"><button type="button" class="btn small" data-act="hAddMbr">Ajouter</button></div>
+    <div class="f">Heures passées sur chaque tâche aujourd'hui (par personne)</div>
+    <div class="hint">Ex. : 3 gars présents, 4 h de pare-vapeur chacun → mets 4 h, l'appli compte 12 h.</div>
+    ${TACHES.map(t => { const v = d.h[t] || 0; return `<div class="step"><span>${esc(t)}</span><span class="step-c"><button type="button" class="btn small" data-act="hStep" data-t="${esc(t)}" data-d="-0.5" aria-label="Moins">−</button><b>${fh(v)}</b><button type="button" class="btn small" data-act="hStep" data-t="${esc(t)}" data-d="0.5" aria-label="Plus">+</button></span></div>`; }).join("")}
+    <label class="f">Note (facultatif)<textarea id="hNote" rows="2">${esc(d.note || "")}</textarea></label>
+    <div class="hint">Total : <b>${fh(Object.values(d.h).reduce((s, v) => s + v, 0) * Math.max(1, d.equipe.length))}</b></div>
+    <div class="btns"><button type="button" class="btn primary" data-act="hEnvoyer">Valider la journée</button><button type="button" class="btn ghost" data-act="hAnnuler">Annuler</button></div></div>`;
+}
+async function actionHeures(act, b){
+  const c = C.chantiers.find(x => x.id === C.ouvert); if (!c) return;
+  const d = H.draft;
+  if (d) { d.note = $("hNote")?.value ?? d.note; d.jour = $("hDate")?.value || d.jour; }
+  if (act === "hSaisir") {
+    await chargerEquipes();
+    const mien = P.equipes.find(e => e.chef_id === ME.user.id);
+    H.draft = { chantier: c.id, jour: isoJour(new Date()), equipeId: mien?.id || "", equipe: (mien?.membres || []).slice(), h: {}, note: "" };
+    if (ME.membre.nom && !H.draft.equipe.includes(ME.membre.nom) && mien) H.draft.equipe.unshift(ME.membre.nom);
+  }
+  else if (act === "hAnnuler") H.draft = null;
+  else if (act === "hMbr") { const n = b.dataset.n; d.equipe = d.equipe.includes(n) ? d.equipe.filter(x => x !== n) : d.equipe.concat(n); }
+  else if (act === "hAddMbr") { const n = $("hAutre").value.trim(); if (n && !d.equipe.includes(n)) d.equipe.push(n); }
+  else if (act === "hStep") { const t = b.dataset.t; d.h[t] = Math.max(0, Math.min(14, (d.h[t] || 0) + Number(b.dataset.d))); if (!d.h[t]) delete d.h[t]; }
+  else if (act === "hEnvoyer") {
+    if (!d.equipe.length) return toast("Coche au moins une personne présente.");
+    const lignes = TACHES.filter(t => d.h[t]).map(t => ({ tache: t, h: d.h[t] }));
+    if (!lignes.length) return toast("Ajoute des heures sur au moins une tâche.");
+    const { error } = await sb.from("journees").insert({ chantier_id: c.id, jour: d.jour, equipe: d.equipe, lignes, note: d.note.trim() || null });
+    if (error) return toast("Journée non enregistrée : " + error.message);
+    H.draft = null; toast("Journée validée et enregistrée"); return chargerHeures(c);
+  }
+  else if (act === "hValider") {
+    const { error } = await sb.from("journees").update({ statut: "valide" }).eq("id", b.dataset.id);
+    if (error) return toast("Validation impossible : " + error.message);
+    toast("Journée validée"); return chargerHeures(c);
+  }
+  else if (act === "hSuppr") {
+    const id = b.dataset.id;
+    if (C.confirm !== "h:" + id) { C.confirm = "h:" + id; return renderHeures(); }
+    C.confirm = null;
+    const { error } = await sb.from("journees").delete().eq("id", id);
+    if (error) return toast("Suppression impossible : " + error.message);
+    toast("Journée supprimée"); return chargerHeures(c);
+  }
+  renderHeures();
+}
+$("view-chantiers").addEventListener("change", (e) => {
+  if (e.target.id === "hEquipe" && H.draft) {
+    H.draft.note = $("hNote")?.value ?? H.draft.note; H.draft.jour = $("hDate")?.value || H.draft.jour;
+    H.draft.equipeId = e.target.value; const eq = P.equipes.find(x => x.id === e.target.value);
+    H.draft.equipe = (eq?.membres || []).slice(); renderHeures();
+  }
+});
+
+
+/* --- Devis / DPGF et analyse des temps --- */
+const A = { quantites: [], heures: {}, apercu: null, manuel: false, enCours: false };
+const nb = (v) => Number(v).toLocaleString("fr-FR", { maximumFractionDigits: 2 });
+const UNITES = ["m²", "ml", "u", "kg", "m³", "ens", "forfait"];
+function chargerScript(src){
+  return new Promise((ok, ko) => {
+    if (document.querySelector(`script[src="${src}"]`)) return ok();
+    const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => ko(new Error("chargement impossible, vérifie ta connexion"));
+    document.head.appendChild(s);
+  });
+}
+async function texteDuFichier(f){
+  const n = f.name.toLowerCase();
+  if (n.endsWith(".pdf") || f.type === "application/pdf") {
+    await chargerScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    const pdf = await pdfjsLib.getDocument({ data: await f.arrayBuffer() }).promise;
+    let t = "";
+    for (let i = 1; i <= Math.min(pdf.numPages, 40); i++) {
+      const c = await (await pdf.getPage(i)).getTextContent(), lignes = {};
+      c.items.forEach(it => { const y = Math.round(it.transform[5]); (lignes[y] = lignes[y] || []).push(it); });
+      t += Object.keys(lignes).sort((a, b) => b - a).map(y => lignes[y].sort((a, b) => a.transform[4] - b.transform[4]).map(it => it.str).join(" ")).join("\n") + "\n";
+    }
+    return t;
+  }
+  if (n.endsWith(".csv") || n.endsWith(".txt")) return f.text();
+  if (/\.(xlsx|xls|ods)$/.test(n)) {
+    await chargerScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
+    const wb = XLSX.read(await f.arrayBuffer(), { type: "array" });
+    return wb.SheetNames.map(s => XLSX.utils.sheet_to_csv(wb.Sheets[s], { FS: " ; " })).join("\n");
+  }
+  throw new Error("format non pris en charge : dépose un PDF ou un fichier Excel");
+}
+async function appelFonction(nom, corps){
+  const { data: { session } } = await sb.auth.getSession(); if (!session) throw new Error("tu n'es plus connecté");
+  let res;
+  try { res = await fetch(`${SB_URL}/functions/v1/${nom}`, { method: "POST", headers: { Authorization: "Bearer " + session.access_token, apikey: SB_KEY, "Content-Type": "application/json" }, body: JSON.stringify(corps) }); }
+  catch { throw new Error(`la fonction « ${nom} » est introuvable dans Supabase (vérifie son nom)`); }
+  const d = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(d.erreur || d.message || "erreur " + res.status);
+  return d;
+}
+const heuresParTache = (journees) => {
+  const h = {};
+  (journees || []).forEach(j => { const n = Math.max(1, (j.equipe || []).length); (j.lignes || []).forEach(l => { h[l.tache] = (h[l.tache] || 0) + (Number(l.h) || 0) * n; }); });
+  return h;
+};
+
+/* Analyse d'un chantier (sous-onglet « Analyse ») */
+async function chargerAnalyseChantier(c){
+  const [q, j] = await Promise.all([
+    sb.from("quantites").select("*").eq("chantier_id", c.id).order("tache"),
+    sb.from("journees").select("equipe, lignes").eq("chantier_id", c.id)
+  ]);
+  if (C.ouvert !== c.id) return;
+  if (q.error) { const box = $("cdAnalyse"); if (box) box.innerHTML = `<div class="empty">Analyse indisponible : ${esc(q.error.message)}</div>`; return; }
+  A.quantites = q.data || []; A.heures = heuresParTache(j.data);
+  renderAnalyseChantier();
+}
+const optTaches = (cur) => { const l = TACHES.concat(TACHES.includes(cur) || !cur ? [] : [cur], TACHES.includes("Autre") ? [] : ["Autre"]); return l.map(t => `<option value="${esc(t)}"${t === cur ? " selected" : ""}>${esc(t)}</option>`).join(""); };
+const optUnites = (cur) => UNITES.concat(UNITES.includes(cur) || !cur ? [] : [cur]).map(u => `<option${u === cur ? " selected" : ""}>${esc(u)}</option>`).join("");
+function renderAnalyseChantier(){
+  const box = $("cdAnalyse"), c = C.chantiers.find(x => x.id === C.ouvert); if (!box || !c) return;
+  let h = "";
+  if (A.apercu) {
+    h += `<div class="dos-add"><div class="tag"><b>→</b>Quantités lues dans le devis : vérifie avant d'enregistrer</div>
+      <div class="hint">Décoche ce qui ne compte pas, corrige la tâche, la quantité ou l'unité si besoin.</div>
+      ${A.apercu.map((l, i) => `<div class="qrow"><label class="qk"><input type="checkbox" data-qi="${i}" data-qf="ok"${l.ok ? " checked" : ""}> <span>${esc(l.libelle || "—")}</span></label>
+        <div class="qf"><select data-qi="${i}" data-qf="tache">${optTaches(l.tache)}</select><input type="number" inputmode="decimal" step="any" min="0" data-qi="${i}" data-qf="quantite" value="${l.quantite}"><select data-qi="${i}" data-qf="unite">${optUnites(l.unite)}</select></div></div>`).join("")}
+      <div class="btns"><button type="button" class="btn primary" data-act="aSave">Enregistrer les quantités</button><button type="button" class="btn ghost" data-act="aAnnuler">Annuler</button></div></div>`;
+  } else {
+    h += `<div class="dos-add"><input type="file" id="fDevis" accept=".pdf,.xlsx,.xls,.csv,.ods,application/pdf"><button type="button" class="btn primary" data-act="aImport"${A.enCours ? " disabled" : ""}>${A.enCours ? "Lecture du devis en cours…" : "Importer un devis ou une DPGF"}</button>
+      <div class="hint">PDF ou Excel. L'IA lit les quantités (m² d'isolant, ml de relevés…) et te les propose avant enregistrement.</div>
+      <button type="button" class="btn small" data-act="aManuel">${A.manuel ? "Fermer" : "Ajouter une quantité à la main"}</button>
+      ${A.manuel ? `<div class="qf"><select id="qmT">${optTaches("")}</select><input type="number" id="qmQ" inputmode="decimal" step="any" min="0" placeholder="Quantité"><select id="qmU">${optUnites("m²")}</select></div><button type="button" class="btn small" data-act="aAjout">Ajouter</button>` : ""}</div>`;
+  }
+  const devis = C.fichiers.filter(f => f.type === "devis");
+  if (devis.length) h += `<div class="tag"><b>→</b>Devis déposés</div><div class="list">${devis.map(f => `<div class="item"><div class="l"><strong>${esc(f.titre || f.nom_fichier || "Devis")}</strong><span>par ${esc(nomDe(f.auteur))} · ${esc(dateCourte(f.created_at))}</span></div><div class="r"><button type="button" class="btn small" data-act="fopen" data-id="${f.id}">Ouvrir</button>${peutSupprimer(f, c) ? `<button type="button" class="btn ghost small" data-act="fsuppr" data-id="${f.id}">${C.confirm === "f:" + f.id ? "Confirmer" : "Supprimer"}</button>` : ""}</div></div>`).join("")}</div>`;
+  // Croisement quantités × heures
+  const parT = {};
+  A.quantites.forEach(q => { const k = q.tache + "|" + q.unite; parT[k] = parT[k] || { tache: q.tache, unite: q.unite, q: 0 }; parT[k].q += Number(q.quantite) || 0; });
+  const lignes = Object.values(parT);
+  Object.keys(A.heures).forEach(t => { if (!lignes.some(l => l.tache === t)) lignes.push({ tache: t, unite: "", q: 0 }); });
+  h += `<div class="tag"><b>→</b>Temps passés par rapport aux quantités</div>`;
+  h += lignes.length ? `<div class="tbl-a"><table><thead><tr><th>Tâche</th><th>Quantité</th><th>Heures</th><th>Temps / unité</th><th>Cadence</th></tr></thead><tbody>${lignes.map(l => {
+    const hh = A.heures[l.tache] || 0;
+    const ratio = l.q && hh ? `<b>${nb(hh / l.q)} h/${esc(l.unite)}</b>` : `<span class="muted">${l.q ? "pas encore d'heures" : "pas de quantité"}</span>`;
+    const cad = l.q && hh ? `${nb(l.q / hh)} ${esc(l.unite)}/h` : "—";
+    return `<tr><td>${esc(l.tache)}</td><td>${l.q ? nb(l.q) + " " + esc(l.unite) : "—"}</td><td>${hh ? fh(hh) : "—"}</td><td>${ratio}</td><td>${cad}</td></tr>`;
+  }).join("")}</tbody></table></div><div class="hint">Heures = heures saisies × nombre de personnes présentes. Les tâches doivent porter le même nom dans le devis et dans les heures.</div>`
+    : `<div class="empty">Importe un devis et saisis des heures pour voir l'analyse.</div>`;
+  if (A.quantites.length) h += `<div class="tag"><b>→</b>Détail des quantités</div><div class="list">${A.quantites.map(q => `<div class="item"><div class="l"><strong>${esc(q.tache)} · ${nb(q.quantite)} ${esc(q.unite)}</strong><span>${esc(q.libelle || (q.source === "manuel" ? "Saisie à la main" : ""))}</span></div><div class="r"><button type="button" class="btn ghost small" data-act="aSuppr" data-id="${q.id}">${C.confirm === "q:" + q.id ? "Confirmer" : "Supprimer"}</button></div></div>`).join("")}</div>`;
+  box.innerHTML = h;
+}
+async function importerDevis(f){
+  const c = C.chantiers.find(x => x.id === C.ouvert); if (!c || !f) return;
+  A.enCours = true; renderAnalyseChantier();
+  try {
+    toast("Lecture du devis…");
+    const texte = await texteDuFichier(f);
+    if (texte.replace(/\s/g, "").length < 40) throw new Error("ce PDF ne contient pas de texte (c'est sûrement un scan). Essaie avec le fichier d'origine ou l'Excel.");
+    // On garde le devis dans le dossier du chantier
+    try {
+      const chemin = `${c.entreprise_id}/${c.id}/${Date.now().toString(36)}-${nomPropre(f.name)}`;
+      const up = await sb.storage.from(BUCKET).upload(chemin, f, { contentType: f.type || "application/octet-stream", upsert: false });
+      if (!up.error) await sb.from("fichiers").insert({ chantier_id: c.id, type: "devis", titre: f.name.replace(/\.[^.]+$/, ""), chemin, nom_fichier: f.name, mime: f.type, taille: f.size });
+    } catch {}
+    toast("L'IA analyse le devis… (jusqu'à une minute)");
+    const d = await appelFonction("analyse-devis", { texte, taches: TACHES });
+    if (!d.lignes || !d.lignes.length) throw new Error("aucune quantité trouvée dans ce devis");
+    A.apercu = d.lignes.map(l => ({ ...l, ok: true }));
+    toast(`${d.lignes.length} lignes trouvées : vérifie-les`);
+  } catch (e) { toast("Import impossible : " + (e?.message || "erreur")); }
+  A.enCours = false;
+  chargerDossier(c); renderAnalyseChantier();
+}
+function lireApercu(){
+  document.querySelectorAll("#cdAnalyse [data-qi]").forEach(el => {
+    const l = A.apercu[Number(el.dataset.qi)]; if (!l) return;
+    l[el.dataset.qf] = el.type === "checkbox" ? el.checked : el.dataset.qf === "quantite" ? Number(String(el.value).replace(",", ".")) : el.value;
+  });
+}
+async function actionAnalyse(act, b){
+  const c = C.chantiers.find(x => x.id === C.ouvert); if (!c) return;
+  if (act === "aImport") return $("fDevis")?.click();
+  if (act === "aManuel") { A.manuel = !A.manuel; return renderAnalyseChantier(); }
+  if (act === "aAnnuler") { A.apercu = null; return renderAnalyseChantier(); }
+  if (act === "aAjout") {
+    const q = Number(String($("qmQ").value).replace(",", "."));
+    if (!(q > 0)) return toast("Indique une quantité.");
+    const { error } = await sb.from("quantites").insert({ chantier_id: c.id, tache: $("qmT").value, quantite: q, unite: $("qmU").value, source: "manuel" });
+    if (error) return toast("Quantité non enregistrée : " + error.message);
+    A.manuel = false; toast("Quantité ajoutée"); return chargerAnalyseChantier(c);
+  }
+  if (act === "aSave") {
+    lireApercu();
+    const rows = A.apercu.filter(l => l.ok && l.quantite > 0).map(l => ({ chantier_id: c.id, tache: l.tache, libelle: l.libelle || null, quantite: l.quantite, unite: l.unite || "m²", source: "devis" }));
+    if (!rows.length) return toast("Aucune ligne cochée.");
+    const { error } = await sb.from("quantites").insert(rows);
+    if (error) return toast("Quantités non enregistrées : " + error.message);
+    A.apercu = null; toast(`${rows.length} quantités enregistrées`); return chargerAnalyseChantier(c);
+  }
+  if (act === "aSuppr") {
+    const id = b.dataset.id;
+    if (C.confirm !== "q:" + id) { C.confirm = "q:" + id; return renderAnalyseChantier(); }
+    C.confirm = null;
+    const { error } = await sb.from("quantites").delete().eq("id", id);
+    if (error) return toast("Suppression impossible : " + error.message);
+    toast("Quantité supprimée"); return chargerAnalyseChantier(c);
+  }
+}
+$("view-chantiers").addEventListener("change", (e) => {
+  if (e.target.id === "fDevis") { const f = e.target.files?.[0]; e.target.value = ""; importerDevis(f); }
+});
+
+/* Analyse globale (onglet « Analyse ») : temps moyens sur tous les chantiers */
+async function chargerAnalyse(){
+  const box = $("anGrid"); box.innerHTML = `<div class="empty">Calcul en cours…</div>`;
+  if (!C.chantiers.length) await chargerChantiers();
+  const [q, j] = await Promise.all([sb.from("quantites").select("chantier_id, tache, quantite, unite"), sb.from("journees").select("chantier_id, equipe, lignes")]);
+  if (q.error || j.error) { box.innerHTML = `<div class="empty">Analyse indisponible : ${esc((q.error || j.error).message)}</div>`; return; }
+  const H = {};
+  (j.data || []).forEach(x => { const n = Math.max(1, (x.equipe || []).length); (x.lignes || []).forEach(l => { const k = x.chantier_id + "|" + l.tache; H[k] = (H[k] || 0) + (Number(l.h) || 0) * n; }); });
+  const Q = {};
+  (q.data || []).forEach(x => { const k = x.chantier_id + "|" + x.tache + "|" + x.unite; Q[k] = (Q[k] || 0) + (Number(x.quantite) || 0); });
+  const G = {};
+  Object.entries(Q).forEach(([k, qte]) => {
+    const [cid, t, u] = k.split("|"), hh = H[cid + "|" + t];
+    if (!hh || !qte) return;
+    const g = G[t + "|" + u] = G[t + "|" + u] || { t, u, items: [] };
+    g.items.push({ cid, q: qte, h: hh, r: hh / qte });
+  });
+  const groupes = Object.values(G).sort((a, b) => a.t.localeCompare(b.t));
+  if (!groupes.length) { box.innerHTML = `<div class="empty">Pas encore assez de données. Il faut, sur au moins un chantier, des quantités (devis importé) <b>et</b> des heures saisies sur les mêmes tâches.</div>`; return; }
+  const nomCh = (id) => C.chantiers.find(c => c.id === id)?.nom || "Chantier";
+  box.innerHTML = groupes.map(g => {
+    const sq = g.items.reduce((s, i) => s + i.q, 0), sh = g.items.reduce((s, i) => s + i.h, 0);
+    const rs = g.items.map(i => i.r), mn = Math.min(...rs), mx = Math.max(...rs);
+    return `<div class="an-card"><div class="row"><h3>${esc(g.t)}</h3><span class="pill">${g.items.length} chantier${g.items.length > 1 ? "s" : ""}</span></div>
+      <div class="an-big">${nb(sh / sq)} <small>h / ${esc(g.u)}</small></div>
+      <div class="hint">Soit ${nb(sq / sh)} ${esc(g.u)} par heure · ${nb(sq)} ${esc(g.u)} pour ${fh(sh)} au total${g.items.length > 1 ? ` · de ${nb(mn)} à ${nb(mx)} h/${esc(g.u)} selon les chantiers` : ""}</div>
+      <div class="list">${g.items.sort((a, b) => a.r - b.r).map(i => `<div class="item"><div class="l"><strong>${esc(nomCh(i.cid))}</strong><span>${nb(i.q)} ${esc(g.u)} · ${fh(i.h)}</span></div><div class="r"><b>${nb(i.r)} h/${esc(g.u)}</b></div></div>`).join("")}</div></div>`;
+  }).join("");
+}
+
+$("anMaj").addEventListener("click", () => chargerAnalyse());
+$("voirHisto").addEventListener("click", () => showTab("historique"));
+$("retourRapport").addEventListener("click", () => showTab("rapport"));
+
+/* --- Demande d'accès (nouvelle entreprise) et espace « Batiria » (super admin) --- */
+const TARIFS = { bureau: 29, chef: 12.5, technicien: 8 };
+const CGV_VERSION = "2026-11-27", CGV_URL = "https://batiria.github.io/BATIRIA-/cgv.html";
+$("cgvAccepter").addEventListener("click", async () => {
+  if (!$("cgvOk").checked) return authMsg("Merci de cocher la case pour continuer.");
+  const b = $("cgvAccepter"); b.disabled = true;
+  const { error } = await sb.rpc("accepter_cgv", { p_version: CGV_VERSION });
+  b.disabled = false;
+  if (error) return authMsg("Impossible d'enregistrer : " + error.message);
+  location.reload();
+});
+async function notifier(corps){ try { await appelFonction("notifier", corps); return true; } catch { return false; } }
+async function afficherAttente(){
+  showAuth("a-wait"); $("a-waitMail").textContent = ME.user.email;
+  const { data } = await sb.from("demandes").select("*").eq("user_id", ME.user.id).order("created_at", { ascending: false }).limit(1);
+  const d = (data || [])[0];
+  const box = $("a-demande");
+  if (d && d.statut === "en_attente") {
+    box.innerHTML = `<div class="alert">Ta demande pour <b>${esc(d.entreprise)}</b> a bien été envoyée le ${esc(dateCourte(d.created_at))}. Tu recevras un mail dès qu'elle sera validée.</div><button type="button" class="btn" id="dmRefresh">J'ai reçu le mail : vérifier</button>`;
+    $("dmRefresh").addEventListener("click", () => location.reload());
+  } else {
+    box.innerHTML = `${d && d.statut === "refusee" ? `<div class="alert err">Ta précédente demande n'a pas été acceptée. Tu peux en refaire une ou contacter Batiria.</div>` : ""}
+      <div class="tag"><b>+</b>Nouvelle entreprise ? Demande un accès</div>
+      <label class="f">Nom de l'entreprise<input type="text" id="dmEnt" maxlength="120" placeholder="Ex. : Étanchéité Rhône-Alpes"></label>
+      <div class="grid2"><label class="f">Ton nom<input type="text" id="dmNom" maxlength="120" placeholder="Prénom Nom"></label><label class="f">Téléphone<input type="text" id="dmTel" inputmode="tel" maxlength="40" placeholder="06…"></label></div>
+      <label class="f">Message (facultatif)<textarea id="dmMsg" rows="2" maxlength="1000" placeholder="Taille de l'équipe, besoin…"></textarea></label>
+      <label class="cgv"><input type="checkbox" id="dmCgv"> <span>J'ai lu et j'accepte les <a href="${CGV_URL}" target="_blank" rel="noopener">conditions générales</a> pour mon entreprise.</span></label>
+      <button type="button" class="btn primary" id="dmEnvoyer">Envoyer ma demande</button>`;
+    $("dmEnvoyer").addEventListener("click", envoyerDemande);
+  }
+}
+async function envoyerDemande(){
+  const entreprise = $("dmEnt").value.trim();
+  if (entreprise.length < 2) return authMsg("Indique le nom de ton entreprise.");
+  if (!$("dmCgv").checked) return authMsg("Merci d'accepter les conditions générales.");
+  const b = $("dmEnvoyer"); b.disabled = true; b.textContent = "Envoi…";
+  const { data, error } = await sb.from("demandes").insert({ entreprise, nom: $("dmNom").value.trim(), telephone: $("dmTel").value.trim(), message: $("dmMsg").value.trim(), email: ME.user.email, cgv_version: CGV_VERSION }).select("id").single();
+  if (error) { b.disabled = false; b.textContent = "Envoyer ma demande"; return authMsg("Demande non envoyée : " + error.message); }
+  await notifier({ type: "demande", id: data.id });
+  afficherAttente();
+}
+
+/* Onglet Batiria */
+const SA = { demandes: [], entreprises: [], confirm: null };
+async function chargerSA(){
+  const [d, e] = await Promise.all([
+    sb.from("demandes").select("*").order("created_at", { ascending: false }).limit(50),
+    sb.rpc("sa_entreprises")
+  ]);
+  if (e.error) { $("saEnt").innerHTML = `<div class="empty">Indisponible : ${esc(e.error.message)}</div>`; return; }
+  SA.demandes = d.data || []; SA.entreprises = e.data || [];
+  renderSA();
+}
+function renderSA(){
+  const att = SA.demandes.filter(x => x.statut === "en_attente");
+  $("saNbDem").textContent = att.length + (att.length > 1 ? " en attente" : " en attente");
+  $("saDem").innerHTML = att.length ? att.map(x => `<div class="item"><div class="l"><strong>${esc(x.entreprise)}</strong><span>${esc([x.nom, x.email, x.telephone].filter(Boolean).join(" · "))}</span>${x.message ? `<span>${esc(x.message)}</span>` : ""}<span>${esc(dateCourte(x.created_at))}</span></div><div class="r"><button type="button" class="btn primary small" data-sa="valider" data-id="${x.id}">Valider</button><button type="button" class="btn ghost small" data-sa="refuser" data-id="${x.id}">${SA.confirm === "r:" + x.id ? "Confirmer" : "Refuser"}</button></div></div>`).join("")
+    : `<div class="empty">Aucune demande en attente.</div>`;
+  let total = 0;
+  $("saEnt").innerHTML = SA.entreprises.map(x => {
+    const bureau = x.nb_admin + x.nb_conducteur, montant = bureau * TARIFS.bureau + x.nb_chef * TARIFS.chef + x.nb_compagnon * TARIFS.technicien;
+    if (x.actif) total += montant;
+    return `<div class="item"><div class="l"><strong>${esc(x.nom)} ${x.actif ? "" : `<span class="pill">Suspendue</span>`}</strong>
+      <span>${bureau} bureau · ${x.nb_chef} chef${x.nb_chef > 1 ? "s" : ""} · ${x.nb_compagnon} technicien${x.nb_compagnon > 1 ? "s" : ""}${x.nb_invitations ? ` · ${x.nb_invitations} invitation${x.nb_invitations > 1 ? "s" : ""} en attente` : ""}</span>
+      <span>${x.admin_email ? esc(x.admin_email) + " · " : ""}depuis le ${esc(frDate(x.created_at))} · <b>${nb(montant)} € HT / mois</b></span></div>
+      <div class="r"><button type="button" class="btn ${x.actif ? "ghost" : ""} small" data-sa="${x.actif ? "suspendre" : "reactiver"}" data-id="${x.id}">${x.actif ? (SA.confirm === "s:" + x.id ? "Confirmer" : "Suspendre") : "Réactiver"}</button></div></div>`;
+  }).join("") || `<div class="empty">Aucune entreprise.</div>`;
+  $("saTotal").innerHTML = `Total des abonnements actifs : <b>${nb(total)} € HT / mois</b> (Bureau ${nb(TARIFS.bureau)} €, Chef ${nb(TARIFS.chef)} €, Technicien ${nb(TARIFS.technicien)} € par poste, hors frais d'installation).`;
+}
+$("view-batiria").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-sa]"); if (!b) return;
+  const a = b.dataset.sa, id = b.dataset.id;
+  if (a === "valider") {
+    b.disabled = true;
+    const { error } = await sb.rpc("sa_valider_demande", { p_id: id });
+    if (error) { b.disabled = false; return toast("Validation impossible : " + error.message); }
+    const ok = await notifier({ type: "demande_validee", id });
+    toast(ok ? "Entreprise créée · le client est prévenu par mail" : "Entreprise créée (mail non envoyé : préviens le client toi-même)");
+    return chargerSA();
+  }
+  if (a === "refuser") {
+    if (SA.confirm !== "r:" + id) { SA.confirm = "r:" + id; return renderSA(); }
+    SA.confirm = null;
+    const { error } = await sb.rpc("sa_refuser_demande", { p_id: id });
+    if (error) return toast("Impossible : " + error.message);
+    toast("Demande refusée"); return chargerSA();
+  }
+  if (a === "suspendre" || a === "reactiver") {
+    if (a === "suspendre" && SA.confirm !== "s:" + id) { SA.confirm = "s:" + id; return renderSA(); }
+    SA.confirm = null;
+    const { error } = await sb.rpc("sa_suspendre", { p_id: id, p_actif: a === "reactiver" });
+    if (error) return toast("Impossible : " + error.message);
+    toast(a === "suspendre" ? "Entreprise suspendue : plus aucun de ses comptes n'a accès" : "Entreprise réactivée"); return chargerSA();
+  }
+});
+$("saCreer").addEventListener("click", async () => {
+  const nom = $("saNom").value.trim(), email = $("saMail").value.trim().toLowerCase();
+  if (!nom || !isMail(email)) return toast("Nom de l'entreprise et e-mail de l'admin obligatoires.");
+  const { error } = await sb.rpc("sa_creer_entreprise", { p_nom: nom, p_email: email, p_nom_admin: $("saNomAdmin").value.trim() });
+  if (error) return toast("Création impossible : " + error.message);
+  ["saNom", "saMail", "saNomAdmin"].forEach(i => $(i).value = "");
+  toast(`Entreprise créée : ${email} peut maintenant se connecter`); chargerSA();
+});
+
+/* --- Dossier chantier : plans, détails, photos, notes --- */
+const BUCKET = "chantiers";
+const dateCourte = (iso) => { const d = new Date(iso); return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} à ${pad(d.getHours())}h${pad(d.getMinutes())}`; };
+const peutSupprimer = (f, c) => f.auteur === ME.user.id || gere(c);
+async function chargerDossier(c){
+  const { data, error } = await sb.from("fichiers").select("*").eq("chantier_id", c.id).order("created_at", { ascending: false });
+  if (C.ouvert !== c.id) return;
+  if (error) { const box = $("cdDossier"); if (box) box.innerHTML = `<div class="empty">Dossier indisponible : ${esc(error.message)}</div>`; return; }
+  C.fichiers = data || [];
+  if (!C.urlsAt || Date.now() - C.urlsAt > 45 * 60 * 1000) { C.urls = {}; C.urlsAt = Date.now(); }
+  const sans = C.fichiers.filter(f => f.chemin && !C.urls[f.chemin]).map(f => f.chemin);
+  if (sans.length) {
+    const { data: u } = await sb.storage.from(BUCKET).createSignedUrls(sans, 3600);
+    (u || []).forEach(x => { if (x.signedUrl) C.urls[x.path] = x.signedUrl; });
+  }
+  renderDossier();
+  if ($("cdAnalyse") && !A.enCours) renderAnalyseChantier();
+}
+function renderDossier(){
+  const box = $("cdDossier"), c = C.chantiers.find(x => x.id === C.ouvert); if (!box || !c) return;
+  const sig = (f) => `par <b>${esc(nomDe(f.auteur))}</b> · ${esc(dateCourte(f.created_at))}`;
+  const suppr = (f) => peutSupprimer(f, c) ? `<button type="button" class="btn ghost small" data-act="fsuppr" data-id="${f.id}">${C.confirm === "f:" + f.id ? "Confirmer" : "Supprimer"}</button>` : "";
+  let h = "";
+  if (C.dosTab === "plans") {
+    const items = C.fichiers.filter(f => f.type === "plan" || f.type === "detail");
+    if (gere(c)) h += `<div class="dos-add"><div class="grid2"><label class="f">Type<select id="fType"><option value="plan">Plan</option><option value="detail">Détail</option></select></label><label class="f">Titre (facultatif)<input type="text" id="fTitre" placeholder="Ex. : Plan toiture R+3"></label></div>
+      <input type="file" id="fPlans" accept="application/pdf,image/*" multiple><button type="button" class="btn primary" data-act="fchoisir" data-input="fPlans">Ajouter un plan (PDF ou image)</button></div>`;
+    h += items.length ? `<div class="list">${items.map(f => `<div class="item"><div class="l"><strong>${esc(f.titre || f.nom_fichier || "Document")}</strong><span>${f.type === "plan" ? "Plan" : "Détail"} · ${sig(f)}</span></div><div class="r"><button type="button" class="btn small" data-act="fopen" data-id="${f.id}">Ouvrir</button>${suppr(f)}</div></div>`).join("")}</div>`
+      : `<div class="empty">Aucun plan pour l'instant.${gere(c) ? "" : " Le conducteur de travaux les ajoutera ici."}</div>`;
+  } else if (C.dosTab === "photos") {
+    const items = C.fichiers.filter(f => f.type === "photo");
+    h += `<div class="dos-add"><label class="f">Légende (facultatif)<input type="text" id="fLegende" placeholder="Ex. : Relevé d'étanchéité zone A"></label>
+      <input type="file" id="fPhotos" accept="image/*" multiple><button type="button" class="btn primary" data-act="fchoisir" data-input="fPhotos">Ajouter des photos</button></div>`;
+    h += items.length ? `<div class="gal">${items.map(f => `<figure><img src="${esc(C.urls[f.chemin] || "")}" alt="${esc(f.texte || "Photo du chantier")}" loading="lazy" data-act="fopen" data-id="${f.id}"><figcaption>${f.texte ? esc(f.texte) + "<br>" : ""}${sig(f)}</figcaption>${suppr(f)}</figure>`).join("")}</div>`
+      : `<div class="empty">Aucune photo pour l'instant.</div>`;
+  } else {
+    const items = C.fichiers.filter(f => f.type === "note");
+    h += `<div class="dos-add"><label class="f">Nouvelle note<textarea id="fNote" rows="3" placeholder="Ex. : Livraison isolant prévue jeudi, accès par le portail nord."></textarea></label><button type="button" class="btn primary" data-act="noteAdd">Ajouter la note</button></div>`;
+    h += items.length ? `<div class="list">${items.map(f => `<div class="item"><div class="l"><span class="note-txt">${esc(f.texte)}</span><span>${sig(f)}</span></div><div class="r">${suppr(f)}</div></div>`).join("")}</div>`
+      : `<div class="empty">Aucune note pour l'instant.</div>`;
+  }
+  box.innerHTML = h;
+}
+const nomPropre = (n) => String(n || "fichier").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9._-]+/g, "-").slice(-60);
+async function compresserPhoto(f){
+  const { im, u } = await loadImage(f); const r = Math.min(1, 1600 / Math.max(im.naturalWidth, im.naturalHeight));
+  const c = document.createElement("canvas"); c.width = Math.round(im.naturalWidth * r); c.height = Math.round(im.naturalHeight * r);
+  c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
+  return new Promise(res => c.toBlob(res, "image/jpeg", 0.82));
+}
+async function envoyerFichiers(files, type, titre, texte){
+  const c = C.chantiers.find(x => x.id === C.ouvert); if (!c || !files.length) return;
+  let ok = 0;
+  for (const f of files) {
+    try {
+      let blob = f, nom = f.name, mime = f.type || "application/octet-stream";
+      if (type === "photo" || (mime.startsWith("image/") && mime !== "image/svg+xml")) { blob = await compresserPhoto(f); nom = nom.replace(/\.[^.]+$/, "") + ".jpg"; mime = "image/jpeg"; }
+      if (!blob) throw new Error("image illisible");
+      if (blob.size > 25 * 1024 * 1024) { toast(`${f.name} dépasse 25 Mo.`); continue; }
+      const chemin = `${c.entreprise_id}/${c.id}/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}-${nomPropre(nom)}`;
+      toast(`Envoi de ${f.name}…`);
+      const up = await sb.storage.from(BUCKET).upload(chemin, blob, { contentType: mime, upsert: false });
+      if (up.error) throw up.error;
+      const { error } = await sb.from("fichiers").insert({ chantier_id: c.id, type, titre: titre || (type === "photo" ? null : f.name.replace(/\.[^.]+$/, "")), texte: texte || null, chemin, nom_fichier: nom, mime, taille: blob.size });
+      if (error) { await sb.storage.from(BUCKET).remove([chemin]); throw error; }
+      ok++;
+    } catch (e) { toast(`${f.name} n'a pas pu être envoyé : ${e?.message || "erreur"}`); }
+  }
+  if (ok) toast(ok > 1 ? `${ok} fichiers ajoutés au dossier` : "Ajouté au dossier");
+  chargerDossier(c);
+}
+async function ajouterNote(){
+  const c = C.chantiers.find(x => x.id === C.ouvert), t = $("fNote")?.value.trim(); if (!c) return;
+  if (!t) return toast("Écris d'abord ta note.");
+  const { error } = await sb.from("fichiers").insert({ chantier_id: c.id, type: "note", texte: t });
+  if (error) return toast("Note non enregistrée : " + error.message);
+  toast("Note ajoutée"); chargerDossier(c);
+}
+function ouvrirFichier(id){
+  const f = C.fichiers.find(x => x.id === id); const u = f && C.urls[f.chemin];
+  if (!u) return toast("Ce fichier n'est pas disponible, recharge la page.");
+  window.open(u, "_blank", "noopener");
+}
+async function supprimerFichier(id){
+  const f = C.fichiers.find(x => x.id === id); if (!f) return;
+  if (C.confirm !== "f:" + id) { C.confirm = "f:" + id; renderDossier(); if ($("cdAnalyse")) renderAnalyseChantier(); return; }
+  C.confirm = null;
+  const { error } = await sb.from("fichiers").delete().eq("id", id);
+  if (error) return toast("Suppression impossible : " + error.message);
+  if (f.chemin) { await sb.storage.from(BUCKET).remove([f.chemin]); delete C.urls[f.chemin]; }
+  toast("Supprimé du dossier"); chargerDossier(C.chantiers.find(x => x.id === C.ouvert));
+}
+$("view-chantiers").addEventListener("change", (e) => {
+  if (e.target.id === "fPlans") { const fs = Array.from(e.target.files || []); e.target.value = ""; envoyerFichiers(fs, $("fType").value, $("fTitre").value.trim(), null); }
+  if (e.target.id === "fPhotos") { const fs = Array.from(e.target.files || []); e.target.value = ""; envoyerFichiers(fs, "photo", null, $("fLegende").value.trim()); }
+});
+
 /* --- Appel à Make via le relais sécurisé (Supabase) --- */
 async function appelMake(action, fd, signal){
   const { data: { session } } = await sb.auth.getSession();
   if (!session) throw { code: "http", status: 401 };
-  return fetch(`${SB_URL}/functions/v1/relais-make?action=${action}`, { method: "POST", body: fd, signal, headers: { Authorization: "Bearer " + session.access_token, apikey: SB_KEY } });
+  // Noms possibles du relais dans Supabase (le premier qui répond est gardé)
+  const noms = [store.get("bat.relais", null), "RELAIS-MAKE-", "relais-make", "clever-service"].filter((n, i, t) => n && t.indexOf(n) === i);
+  let derniere = null;
+  for (const nom of noms) {
+    try {
+      const res = await fetch(`${SB_URL}/functions/v1/${encodeURIComponent(nom)}?action=${action}`, { method: "POST", body: fd, signal, headers: { Authorization: "Bearer " + session.access_token, apikey: SB_KEY } });
+      if (res.status === 404) { derniere = res; continue; }
+      store.set("bat.relais", nom);
+      return res;
+    } catch (e) { if (e?.name === "AbortError") throw e; derniere = e; }
+  }
+  if (derniere instanceof Response) return derniere;
+  throw derniere || new Error("relais introuvable");
 }
 
 /* --- Rapport rattaché au chantier --- */
@@ -1280,8 +2248,39 @@ function remplirDepuisChantier(){
   if (!r.infos.adresse && (c.adresse || c.ville)) r.infos.adresse = [c.adresse, c.ville].filter(Boolean).join(", ");
   if (!r.infos.client && c.client) r.infos.client = c.client;
 }
+async function envoyerPhotosRapport(){
+  // Range les photos du rapport dans le dossier du chantier (une seule fois chacune)
+  const aEnvoyer = S.photos.filter(p => !p.chemin && p.blob);
+  if (aEnvoyer.length) toast(`Envoi de ${aEnvoyer.length} photo${aEnvoyer.length > 1 ? "s" : ""} dans le dossier du chantier…`);
+  let echecs = 0;
+  for (let i = 0; i < S.photos.length; i++) {
+    const p = S.photos[i]; if (p.chemin || !p.blob) continue;
+    const legende = S.report?.photos?.find(x => x.n === i + 1)?.legende || p.caption || "";
+    const chemin = `${ME.membre.entreprise_id}/${S.chantier.id}/rapport-${nomPropre(S.meta.num || "rapport")}-${i + 1}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+    try {
+      const up = await sb.storage.from(BUCKET).upload(chemin, p.blob, { contentType: "image/jpeg", upsert: false });
+      if (up.error) throw up.error;
+      const { error } = await sb.from("fichiers").insert({ chantier_id: S.chantier.id, type: "photo", texte: [legende, `Rapport ${S.meta.num || ""}`.trim()].filter(Boolean).join(" · "), chemin, nom_fichier: `photo-${i + 1}.jpg`, mime: "image/jpeg", taille: p.blob.size });
+      if (error) { await sb.storage.from(BUCKET).remove([chemin]); throw error; }
+      p.chemin = chemin;
+    } catch { echecs++; }
+  }
+  if (echecs) toast(`${echecs} photo${echecs > 1 ? "s n'ont" : " n'a"} pas pu être envoyée${echecs > 1 ? "s" : ""}. Réessaie en enregistrant à nouveau.`);
+  S.meta.photos = S.photos.filter(p => p.chemin).map(p => ({ chemin: p.chemin, w: p.w, h: p.h, caption: p.caption || "" }));
+}
+async function rechargerPhotosRapport(meta){
+  const liste = (meta && meta.photos) || []; if (!liste.length) return 0;
+  const { data } = await sb.storage.from(BUCKET).createSignedUrls(liste.map(x => x.chemin), 600);
+  let n = 0;
+  for (const x of liste) {
+    const u = (data || []).find(d => d.path === x.chemin)?.signedUrl; if (!u) continue;
+    try { const blob = await (await fetch(u)).blob(); S.photos.push({ blob, url: URL.createObjectURL(blob), w: x.w, h: x.h, caption: x.caption || "", chemin: x.chemin }); n++; } catch {}
+  }
+  return n;
+}
 async function sauverEnLigne(quiet){
   if (!sb || !ME.membre || !S.chantier || !S.report || !peut.rapport()) return;
+  await envoyerPhotosRapport();
   const row = { chantier_id: S.chantier.id, numero: S.meta.num, date_rapport: isoDate(S.report.infos?.date), modele_id: S.meta.modelId || null,
     contenu: { report: S.report, meta: Object.assign({}, S.meta, { dbId: undefined }) }, envoye_at: S.meta.sentTo ? new Date().toISOString() : null };
   const q = S.meta.dbId ? sb.from("rapports").update(row).eq("id", S.meta.dbId).select("id").single() : sb.from("rapports").insert(row).select("id").single();
@@ -1336,6 +2335,7 @@ $("eq-invite").addEventListener("click", async () => {
   if (error) return toast(/duplicate|unique/i.test(error.message) ? "Une invitation existe déjà pour cette adresse." : /appartient/.test(error.message) ? "Cette personne appartient déjà à une entreprise." : "Invitation impossible : " + error.message);
   $("eq-mail").value = ""; $("eq-nom").value = "";
   toast(`C'est noté : ${nom || email} pourra se connecter avec ${email}`); chargerEquipe();
+  notifier({ type: "invitation", email });
 });
 
 
